@@ -96,7 +96,8 @@ The queue is the first automation layer. It ships with explicit human gates:
 - **Base-lock guard** — training steps refuse to start when the base is missing
   or its recorded lock no longer matches.
 - **One at a time** — a single worker preserves CPU/memory and makes the order
-  auditable. Output goes to `runs/jobs/<id>.log`; state to `data/jobs.json`.
+  auditable. Training steps also refuse to start while another Forge run is
+  active. Output goes to `runs/jobs/<id>.log`; state to `data/jobs.json`.
 - **Human promotion gate** — a measured job stops at `awaiting_approval`.
   Approving resumes the decision/report steps; rejecting records no promotion
   and leaves the adapters on disk.

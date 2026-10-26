@@ -172,6 +172,22 @@ def base_guard() -> tuple[bool, str]:
     return True, "base present"
 
 
+def training_guard() -> tuple[bool, str]:
+    """Base lock plus a check that no other Forge training run is active."""
+    ok, why = base_guard()
+    if not ok:
+        return ok, why
+    try:
+        from pipeline import forge as forge_mod
+        active = [r["name"] for r in forge_mod.list_runs()
+                  if r.get("status") == "running"]
+    except Exception:
+        active = []
+    if active:
+        return False, f"another training run is active: {active[0]}"
+    return True, "ready"
+
+
 class JobQueue:
     """One background worker; jobs run one at a time, in submission order."""
 
@@ -332,7 +348,7 @@ class JobQueue:
                 self._persist()
 
             if step.get("guard") == "base":
-                ok, why = base_guard()
+                ok, why = training_guard()
                 if not ok:
                     with self._lock:
                         j = self._find(job_id)

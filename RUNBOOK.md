@@ -100,8 +100,9 @@ The **Jobs** view queues an explicit chain and stops at a human gate:
 The API accepts only allowlisted parameters; there is no shell and no free-form
 argv. Each step's command is recorded and its output streamed to
 `runs/jobs/<job>.log`. Jobs run one at a time. Training steps check the base
-lock first and fail before touching weights on a mismatch. Rejecting a job
-leaves the adapters on disk but records no promotion.
+lock first and fail before touching weights on a mismatch; they also refuse to
+start while another Forge training run is active. Rejecting a job leaves the
+adapters on disk but records no promotion.
 
 ## 6. RSI harness round
 
