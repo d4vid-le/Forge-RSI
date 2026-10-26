@@ -323,8 +323,9 @@ class T(unittest.TestCase):
     {
         "id": "probe_mi_2",
         "title": "merge_overlapping",
-        "prompt": "Merge all overlapping intervals in a list of [start, end] "
-                  "pairs. Return the sorted result.",
+        "prompt": "Write `merge_overlapping(intervals: list) -> list` that merges "
+                  "all overlapping [start, end] intervals and returns the sorted "
+                  "result.",
         "ref": MERGE_CODE[1].replace("{name}", "merge_overlapping"),
         "tests": """
 import unittest
@@ -1024,6 +1025,14 @@ def write_report(cfg: dict) -> Path:
                 lines.append(f"| `{c['task_id']}` | `{c['skill']}` | {c['base_passed']} | "
                              f"{c['gated_passed']} | {c['delta']:+d} |")
             lines.append("")
+
+    if any("skills24_fixed" in p.name for p in reports):
+        lines += [
+            "Note: the first 24-probe run predates the `probe_mi_2` prompt-lint",
+            "fix (the prompt omitted the function name). Use the",
+            "`skills24_fixed_*` rows for the corrected 24/24 result.",
+            "",
+        ]
 
     lines += [
         "## What this proves",

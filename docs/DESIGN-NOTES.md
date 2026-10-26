@@ -43,15 +43,15 @@ Two rank-8 adapters were trained from the frozen base on pure synthetic corpora:
 | `word_freq` | +1 | +11 |
 | `merge_intervals` | +1 | +3 |
 
-Gated stack: dev **18/20 → 20/20**, expanded probes **9/24 → 23/24**, holdout
+Gated stack: dev **18/20 → 20/20**, expanded probes **10/24 → 24/24**, holdout
 **8/10 → 8/10**, base checksum unchanged, non-routed outputs identical. The
 original 12-probe subset is 12/12.
 
-The expanded probes use function names and test cases that were **not** in the
-training corpus. The one expanded-probe failure is a function-name drift: the
-adapter emitted `combine_intervals` when the task asked for `merge_overlapping`.
-That is a real generalization failure, and it is exactly why the probe set was
-expanded.
+The first expanded run was 23/24 because `probe_mi_2`'s prompt never named
+`merge_overlapping`; the model guessed a training name, and the verifier
+reported an import error. `tasks/lint_tasks.py` caught the under-specified
+prompt. After the fix, the corrected run is 24/24. That failure was a
+benchmark bug, not a model-capability result.
 
 ## 5. The teacher needed a diversity rule
 
@@ -119,5 +119,5 @@ reason to promote.
 - A learned router. The deployed router is deterministic keyword matching;
   oracle routing is an upper bound.
 - More skills and a larger probe set. Two skills and 24 probes are enough to
-  demonstrate the mechanism and expose a name-generalization failure, not to
-  estimate a general skill-acquisition rate.
+  demonstrate the mechanism and expose a benchmark prompt bug, not to estimate
+  a general skill-acquisition rate.

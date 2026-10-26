@@ -69,7 +69,13 @@ The original 12-probe decision table is above. The expanded
 | `private_r2_private_holdout` | `private_holdout` | 5/10 (0.50) | 10/10 (1.00) | +0.50 | True | True |
 | `r2_public_dev` | `dev` | 18/20 (0.90) | 20/20 (1.00) | +0.10 | True | True |
 | `r2_public_skills` | `skills` | 9/24 (0.38) | 23/24 (0.96) | +0.58 | True | True |
+| `skills24_fixed_r1_skills` | `skills` | 10/24 (0.42) | 24/24 (1.00) | +0.58 | True | True |
+| `skills24_fixed_r2_skills` | `skills` | 10/24 (0.42) | 24/24 (1.00) | +0.58 | True | True |
 | `skills24_r1_skills` | `skills` | 9/24 (0.38) | 23/24 (0.96) | +0.58 | True | True |
+
+The first 24-probe run predates the `probe_mi_2`
+prompt-lint fix (the prompt omitted the function name).
+Use the `skills24_fixed_*` rows for the corrected result.
 
 ## Composition experiment (two skills, one compound task)
 

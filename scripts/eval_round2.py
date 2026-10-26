@@ -45,7 +45,7 @@ def main() -> int:
 
     # Round 1 public reports already exist from the first round. Re-run only the
     # round-2 public evaluations, plus both private holdout evaluations.
-    run(["skills-eval", "--splits", "dev,skills", "--run-id", "r2_public",
+    run(["skills-eval", "--splits", "dev", "--run-id", "r2_public",
          "--registry", r2, "--router", "keyword"])
     run(["skills-eval", "--splits", "private_holdout", "--run-id", "private_r1",
          "--registry", r1, "--router", "keyword"])
@@ -53,9 +53,9 @@ def main() -> int:
          "--registry", r2, "--router", "keyword"])
 
     r1_dev = report(cfg, "legates_final_dev")
-    r1_skills = report(cfg, "skills24_r1_skills")
+    r1_skills = report(cfg, "skills24_fixed_r1_skills")
     r2_dev = report(cfg, "r2_public_dev")
-    r2_skills = report(cfg, "r2_public_skills")
+    r2_skills = report(cfg, "skills24_fixed_r2_skills")
     p1 = report(cfg, "private_r1_private_holdout")
     p2 = report(cfg, "private_r2_private_holdout")
 

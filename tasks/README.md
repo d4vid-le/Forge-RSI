@@ -17,6 +17,20 @@ to pass their own tests before a task is written.
 python3 tasks/build_tasks.py   # verifies references and rewrites the JSONs
 ```
 
+## Prompt lint
+
+A task must tell the model which function name to define. If the hidden tests
+import a name that never appears in the prompt, the task is under-specified and
+a failure is a benchmark bug, not a model failure.
+
+```bash
+python3 tasks/lint_tasks.py
+```
+
+This caught `probe_mi_2`, whose prompt originally omitted `merge_overlapping`.
+The corrected prompt names the function; the first 23/24 run is superseded by
+the corrected **24/24** run in `reports/`.
+
 ## Public benchmark disclosure
 
 The 10 holdout tasks are in this repository. That makes them a **public
@@ -29,6 +43,6 @@ hashes, and do not inspect it before the final run.
 `tasks/skills/` contains 24 probes across two skills (`word_freq`,
 `merge_intervals`; 12 each) with function names and test cases that are **not**
 in the training corpora. They are the generalization check for the Le-Gates
-adapters. The original 12-probe subset is 12/12; the expanded 24-probe set is
-23/24. The one failure is a function-name drift (`combine_intervals` emitted for
-a `merge_overlapping` prompt), which is a real generalization failure.
+adapters. The original 12-probe subset is 12/12; the corrected expanded set is
+**24/24**. The first run was 23/24 because one prompt omitted the function name;
+the linter caught it.

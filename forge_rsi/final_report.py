@@ -166,6 +166,11 @@ def write(cfg: dict) -> Path:
                     f"{r['non_routed_identical']} | {r['base_unchanged']} |"
                 )
             lines.append("")
+            if any("skills24_fixed" in p.name for p in gated):
+                lines += ["The first 24-probe run predates the `probe_mi_2`",
+                          "prompt-lint fix (the prompt omitted the function name).",
+                          "Use the `skills24_fixed_*` rows for the corrected result.",
+                          ""]
 
     # ── Composition experiment ───────────────────────────────────────────
     comp_path = runs_dir / "composition_matrix.json"
