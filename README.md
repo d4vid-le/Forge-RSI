@@ -178,7 +178,19 @@ python -m forge_rsi skills-decide --run-prefix legates_candidates
 python -m forge_rsi skills-report
 ```
 
-### 4. SkillForge data pipeline (optional)
+### 4. Ops dashboard
+
+```bash
+pip install -e '.[dashboard]'
+python -m forge_rsi dashboard
+# http://127.0.0.1:8765
+```
+
+Read-only: it shows the base lock, skill registries, gated evaluations, RSI
+rounds, composition matrix, private-holdout decision, and reports. It has no
+training or promotion endpoints and binds to `127.0.0.1` by default.
+
+### 5. SkillForge data pipeline (optional)
 
 ```bash
 ./sf import path/to/raw.jsonl --session-name "my run"
@@ -217,6 +229,9 @@ tasks/skills               held-out skill probes
 harness/                   harness versions and probes
 docs/                      architecture, design notes, paper, Mirror assessment
 reports/                   sanitized measured reports
+dashboard/                 read-only ops dashboard
+RUNBOOK.md                 end-to-end runbook
+scripts/                   round-2 + run-all helpers
 config.example.toml        portable example config
 workspace.tar              legacy frontend snapshot (simulated backend; UI reference only)
 ```

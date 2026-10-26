@@ -16,6 +16,16 @@ sys.path.insert(0, str(ROOT))
 from forge_rsi import config, harness, legates
 
 
+def corpus_info(adapter_dir: Path) -> dict:
+    d = adapter_dir / "data"
+    def count(name: str):
+        p = d / name
+        return sum(1 for _ in p.open()) if p.exists() else None
+    return {"dir": str(d), "rows": count("all.jsonl"),
+            "train": count("train.jsonl"), "valid": count("valid.jsonl"),
+            "test": count("test.jsonl")}
+
+
 def main() -> int:
     cfg = config.load()
     h = harness.load("harness/h0_baseline.json")
@@ -28,7 +38,7 @@ def main() -> int:
         if not (corpus / "train.jsonl").exists():
             info = legates.build_corpus(cfg, skill, 60, corpus, system, seed=1)
         else:
-            info = {"dir": str(corpus)}
+            info = corpus_info(root / skill)
         print(f"[r2] training {skill} -> {root / skill}", flush=True)
         res = legates.train_skill(cfg, skill, corpus, root / skill, iters=160)
         loss = legates.summarize_train_log(res["log"])

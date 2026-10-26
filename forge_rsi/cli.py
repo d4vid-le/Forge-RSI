@@ -311,6 +311,19 @@ def cmd_final_report(cfg: dict, a) -> int:
     return 0
 
 
+def cmd_dashboard(cfg: dict, a) -> int:
+    try:
+        import uvicorn
+        from dashboard.app import app
+    except ImportError:
+        print("dashboard dependencies missing: pip install -e '.[dashboard]'",
+              file=sys.stderr)
+        return 10
+    print(f"[dashboard] http://{a.host}:{a.port} (read-only)")
+    uvicorn.run(app, host=a.host, port=a.port, log_level="info")
+    return 0
+
+
 def _skill_list(a) -> list[str]:
     return [x.strip() for x in a.skills.split(",") if x.strip()]
 
@@ -537,6 +550,11 @@ def build_parser() -> argparse.ArgumentParser:
     ce = sub.add_parser("composition-eval", help="run the two-skill composition matrix")
     ce.add_argument("--harness", default=None)
     ce.set_defaults(func=cmd_composition_eval)
+
+    db = sub.add_parser("dashboard", help="read-only local ops dashboard")
+    db.add_argument("--host", default="127.0.0.1")
+    db.add_argument("--port", type=int, default=8765)
+    db.set_defaults(func=cmd_dashboard)
     return p
 
 

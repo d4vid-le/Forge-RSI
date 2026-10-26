@@ -1,5 +1,8 @@
 # Scripts
 
+- `run_all.sh` — the round-1 runbook as one script (freeze → RSI loop → skill
+  corpora/training → gated eval → reports). Set `PYTHON` to the MLX
+  interpreter if it is not `python`.
 - `train_round2.py` — trains a second round of Le-Gates adapters on a fresh
   corpus (seed 1, 60 rows, 160 iters). It writes to `adapters/skills/r2/` and
   does not touch the round-1 adapters or the base model.

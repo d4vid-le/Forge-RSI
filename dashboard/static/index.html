@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillForge Ops</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c2430; --line: #2d3748;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --good: #3fb950; --bad: #f85149; --warn: #d29922;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: .2px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; border: 1px solid var(--line); color: var(--muted); }
+  .pill.good { color: var(--good); border-color: #1f6f33; background: #0f2416; }
+  .pill.bad { color: var(--bad); border-color: #6e1f1f; background: #2a1111; }
+  .pill.warn { color: var(--warn); border-color: #6e4d12; background: #2a2110; }
+  .grid { display: grid; gap: 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .7px; }
+  .card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .card .note { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  section { margin: 22px 0; }
+  h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; background: var(--panel2); }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .muted { color: var(--muted); }
+  .banner { border: 1px solid #6e1f1f; background: #2a1111; color: #ffb4ad;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+  .two { grid-template-columns: 1.4fr 1fr; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+  .report-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+  .report-list button { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; cursor: pointer; font: inherit; }
+  .report-list button:hover, .report-list button.active { border-color: var(--accent); color: var(--accent); }
+  pre#report-view { margin: 0; padding: 14px; max-height: 520px; overflow: auto;
+    background: #0b0f14; border-top: 1px solid var(--line); white-space: pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .empty { color: var(--muted); padding: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SkillForge <span>Ops</span></h1>
+      <div class="sub" id="sub">loading…</div>
+    </div>
+    <div id="health"></div>
+  </header>
+  <div id="error"></div>
+  <div class="grid kpis" id="kpis"></div>
+
+  <section>
+    <h2>Skill adapters</h2>
+    <div class="panel"><table id="skills"></table></div>
+  </section>
+
+  <section>
+    <h2>Evaluations</h2>
+    <div class="panel"><table id="evals"></table></div>
+  </section>
+
+  <section class="grid two">
+    <div>
+      <h2>RSI rounds</h2>
+      <div class="panel"><table id="rsi"></table></div>
+      <div id="holdout" style="margin-top:12px"></div>
+    </div>
+    <div>
+      <h2>Composition</h2>
+      <div class="panel"><table id="composition"></table></div>
+      <div id="decision" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reports</h2>
+    <div class="panel">
+      <div class="report-list" id="reports"></div>
+      <pre id="report-view">Select a report.</pre>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const score = (s) => (s && s.n != null) ? `${s.passed}/${s.n}` : "—";
+const pct = (s) => (s && s.score != null) ? Number(s.score).toFixed(2) : "—";
+const val = (v, d=2) => (v == null) ? "—" : (typeof v === "number" ? v.toFixed(d) : v);
+const pill = (ok, yes="PASS", no="FAIL") => `<span class="pill ${ok ? "good" : "bad"}">${ok ? yes : no}</span>`;
+
+function card(label, value, note) {
+  return `<div class="card"><div class="label">${esc(label)}</div><div class="value">${value}</div><div class="note">${esc(note || "")}</div></div>`;
+}
+function pick(runs, name) { return runs.find(r => r.run === name); }
+function pickPrefix(runs, prefix) { return runs.find(r => r.run.startsWith(prefix)); }
+
+function renderKpis(s) {
+  const ev = s.evaluations || [];
+  const dev = pick(ev, "legates_final_dev") || pick(ev, "r2_public_dev");
+  const hold = pick(ev, "legates_final_holdout");
+  const probes = pick(ev, "skills24_fixed_r1_skills") || pickPrefix(ev, "skills24_fixed");
+  const priv = pick(ev, "private_r1_private_holdout") || pickPrefix(ev, "private_r1");
+  const lint = s.tasks?.lint || {};
+  $("kpis").innerHTML = [
+    card("Dev", score(dev?.gated), dev ? `base ${score(dev.base)}` : "no run"),
+    card("Holdout", score(hold?.gated), hold ? `base ${score(hold.base)}` : "no run"),
+    card("24 probes", score(probes?.gated), probes ? `base ${score(probes.base)}` : "no run"),
+    card("Private holdout", score(priv?.gated), priv ? `base ${score(priv.base)}` : "no run"),
+    card("Task lint", lint.ok ? "PASS" : "FAIL", `${lint.n ?? 0} tasks`),
+    card("Base lock", s.base?.checksums_ok ? "OK" : (s.base?.checksums_ok === false ? "FAIL" : "—"),
+         s.base?.exists ? "model present" : "model missing"),
+  ].join("");
+}
+
+function renderSkills(s) {
+  const rows = s.skills || [];
+  $("skills").innerHTML = `<thead><tr><th>round</th><th>skill</th><th>status</th>
+    <th class="num">rows</th><th class="num">iters</th><th class="num">train</th>
+    <th class="num">val</th><th>base</th><th>decision</th></tr></thead><tbody>` +
+    (rows.length ? rows.map(r => {
+      const st = r.adapter_exists ? r.status : "untrained";
+      return `<tr>
+      <td class="muted">${esc(r.round)}</td><td><code>${esc(r.skill)}</code></td>
+      <td>${pill(st === "promoted" || st === "candidate", esc(st), esc(st))}</td>
+      <td class="num">${val(r.rows, 0)}</td><td class="num">${val(r.iters, 0)}</td>
+      <td class="num">${val(r.train_loss, 3)}</td><td class="num">${val(r.val_loss, 3)}</td>
+      <td>${r.base_unchanged === true ? pill(true, "OK", "BAD") : "—"}</td>
+      <td class="muted">${esc(r.decision?.reason || "—")}</td></tr>`;
+    }).join("")
+      : `<tr><td colspan="9" class="empty">No skill registry found.</td></tr>`) + `</tbody>`;
+}
+
+function renderEvals(s) {
+  const rows = s.evaluations || [];
+  $("evals").innerHTML = `<thead><tr><th>run</th><th>split</th><th class="num">base</th>
+    <th class="num">gated</th><th class="num">delta</th><th class="num">routed</th>
+    <th>identical</th><th>base</th></tr></thead><tbody>` +
+    (rows.length ? rows.map(r => `<tr>
+      <td><code>${esc(r.run)}</code>${r.run.includes("fixed") ? ' <span class="pill good">fixed</span>' : (r.run === "skills24_r1_skills" || r.run === "r2_public_skills" ? ' <span class="pill warn">pre-fix</span>' : "")}</td>
+      <td>${esc(r.split)}</td><td class="num">${score(r.base)}</td>
+      <td class="num"><strong>${score(r.gated)}</strong></td>
+      <td class="num">${r.delta == null ? "—" : (r.delta >= 0 ? "+" : "") + Number(r.delta).toFixed(2)}</td>
+      <td class="num">${r.routed}</td>
+      <td>${r.non_routed_identical === true ? pill(true, "yes", "no") : "—"}</td>
+      <td>${r.base_unchanged === true ? pill(true, "OK", "BAD") : "—"}</td></tr>`).join("")
+      : `<tr><td colspan="8" class="empty">No gated evaluation reports found.</td></tr>`) + `</tbody>`;
+}
+
+function renderRsi(s) {
+  const it = s.rsi?.iterations || [];
+  $("rsi").innerHTML = `<thead><tr><th>round</th><th class="num">#</th><th>candidate</th>
+    <th class="num">W</th><th class="num">L</th><th class="num">dev</th><th class="num">delta</th>
+    <th>decision</th></tr></thead><tbody>` +
+    (it.length ? it.map(r => `<tr>
+      <td class="muted">${esc(r.round)}</td><td class="num">${esc(r.iteration)}</td>
+      <td><code>${esc(r.candidate)}</code></td><td class="num">${esc(r.wins)}</td>
+      <td class="num">${esc(r.losses)}</td><td class="num">${val(r.candidate_score)}</td>
+      <td class="num">${r.delta == null ? "—" : (r.delta >= 0 ? "+" : "") + Number(r.delta).toFixed(2)}</td>
+      <td>${r.accepted ? pill(true, "accepted", "rejected") : pill(false, "accepted", "rejected")}
+        <span class="muted">${esc(r.reason || "")}</span></td></tr>`).join("")
+      : `<tr><td colspan="8" class="empty">No RSI rounds found.</td></tr>`) + `</tbody>`;
+  const holds = s.rsi?.holdout || [];
+  $("holdout").innerHTML = holds.map(h => `<div class="card">
+    <div class="label">${esc(h.round)} holdout</div>
+    <div class="value">${val(h.final_score)} <span class="muted" style="font-size:12px">base ${val(h.baseline_score)}</span></div>
+    <div class="note">Δ ${h.delta == null ? "—" : (h.delta >= 0 ? "+" : "") + Number(h.delta).toFixed(2)}
+      · not worse: ${h.not_worse ? "yes" : "no"} · winner <code>${esc(h.winner_harness || "—")}</code></div>
+  </div>`).join("");
+}
+
+function renderComposition(s) {
+  const c = s.composition || {};
+  const cfgs = c.configs || {};
+  const keys = Object.keys(cfgs);
+  $("composition").innerHTML = `<thead><tr><th>config</th><th class="num">parts word</th>
+    <th class="num">parts merge</th><th class="num">whole</th></tr></thead><tbody>` +
+    (keys.length ? keys.map(k => {
+      const r = cfgs[k];
+      return `<tr><td><code>${esc(k)}</code></td>
+        <td class="num">${r.parts_word ?? "—"}/${r.parts_word_n ?? "—"}</td>
+        <td class="num">${r.parts_merge ?? "—"}/${r.parts_merge_n ?? "—"}</td>
+        <td class="num"><strong>${r.whole_pass}/${r.whole_n}</strong></td></tr>`;
+    }).join("") : `<tr><td colspan="4" class="empty">No composition matrix found.</td></tr>`) + `</tbody>`;
+
+  const d = s.private_decision || {};
+  if (d.promote !== undefined) {
+    $("decision").innerHTML = `<div class="card">
+      <div class="label">Round 2 decision</div>
+      <div class="value">${d.promote ? "PROMOTE" : "KEEP ROUND 1"}</div>
+      <div class="note">private Δ ${Number(d.private_delta).toFixed(2)} · dev Δ ${Number(d.public_dev_delta).toFixed(2)}
+        · probes Δ ${Number(d.public_probe_delta).toFixed(2)} · ${esc(d.reason || "")}</div></div>`;
+  } else {
+    $("decision").innerHTML = `<div class="card"><div class="label">Round 2 decision</div>
+      <div class="note">No private-holdout decision found.</div></div>`;
+  }
+}
+
+function renderReports(s) {
+  const rows = s.reports || [];
+  $("reports").innerHTML = rows.length ? rows.map(r =>
+    `<button data-name="${esc(r.name)}">${esc(r.name)}</button>`).join("")
+    : `<span class="empty">No reports found.</span>`;
+  $("reports").querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => openReport(btn.dataset.name, btn));
+  });
+  if (rows.length) openReport(rows[0].name, $("reports").querySelector("button"));
+}
+
+async function openReport(name, btn) {
+  $("reports").querySelectorAll("button").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  $("report-view").textContent = "loading…";
+  try {
+    const res = await fetch(`/api/report/${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    $("report-view").textContent = await res.text();
+  } catch (e) {
+    $("report-view").textContent = `Could not load ${name}: ${e.message}`;
+  }
+}
+
+async function main() {
+  try {
+    const res = await fetch("/api/status");
+    const s = await res.json();
+    if (s.error) {
+      $("error").innerHTML = `<div class="banner">${esc(s.error)}<br><span class="muted">${esc(s.hint || "")}</span></div>`;
+      return;
+    }
+    $("sub").textContent = `${s.project} · generated ${s.generated_at}`;
+    $("health").innerHTML = pill(true, "online", "offline");
+    renderKpis(s);
+    renderSkills(s);
+    renderEvals(s);
+    renderRsi(s);
+    renderComposition(s);
+    renderReports(s);
+  } catch (e) {
+    $("error").innerHTML = `<div class="banner">Dashboard error: ${esc(e.message)}</div>`;
+  }
+}
+main();
+</script>
+</body>
+</html>

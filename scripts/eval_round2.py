@@ -11,12 +11,13 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from forge_rsi import config
+from forge_rsi import config, legates
 
 PY = sys.executable
 
@@ -34,6 +35,16 @@ def report(cfg: dict, name: str) -> dict:
     if not p.exists():
         raise FileNotFoundError(p)
     return json.loads(p.read_text())
+
+
+def corpus_info(adapter_dir: str | Path) -> dict:
+    d = Path(adapter_dir) / "data"
+    def count(name: str):
+        p = d / name
+        return sum(1 for _ in p.open()) if p.exists() else None
+    return {"dir": str(d), "rows": count("all.jsonl"),
+            "train": count("train.jsonl"), "valid": count("valid.jsonl"),
+            "test": count("test.jsonl")}
 
 
 def main() -> int:
@@ -97,6 +108,27 @@ def main() -> int:
     }
     out = Path(cfg["paths"]["runs"]) / "private_round2_decision.json"
     out.write_text(json.dumps(decision, indent=2) + "\n")
+
+    # Lifecycle: a tie keeps round 1, so round 2 is quarantined (gate 0), not
+    # deleted. The dashboard and router read this status.
+    r2reg = legates.load_registry(cfg, r2)
+    for skill in ("word_freq", "merge_intervals"):
+        entry = r2reg.get(skill)
+        if not entry:
+            continue
+        entry["status"] = "promoted" if promote else "quarantined"
+        entry["data"] = corpus_info(entry.get("adapter"))
+        entry["decision"] = {
+            "status": entry["status"],
+            "reason": reason,
+            "private_delta": private_delta,
+            "public_dev_delta": public_dev_delta,
+            "public_probe_delta": public_probe_delta,
+            "forgetting_ok": forgetting_ok,
+            "decided_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+    legates.save_registry(cfg, r2reg, r2)
+
     write_private_md(cfg, p1, p2, decision)
     print(json.dumps(decision, indent=2))
     print(f"[eval-round2] decision -> {out}")

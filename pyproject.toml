@@ -18,12 +18,14 @@ dependencies = [
 
 [project.optional-dependencies]
 pipeline = ["fastapi", "uvicorn", "python-multipart"]
+dashboard = ["fastapi>=0.110", "uvicorn>=0.29"]
 
 [project.scripts]
 forge-rsi = "forge_rsi.cli:main"
 
 [tool.setuptools]
-packages = ["forge_rsi", "pipeline"]
+packages = ["forge_rsi", "pipeline", "dashboard"]
 
 [tool.setuptools.package-data]
 pipeline = ["ui/*"]
+dashboard = ["static/*"]
