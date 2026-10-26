@@ -139,6 +139,16 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/playground/server":
                 return self._send({"ok": True, "server": pg_mod.server_status(
                     int(q.get("port") or 8080))})
+            if u.path == "/api/ops/status":
+                from dashboard.status import collect
+                from forge_rsi import config as forge_cfg
+                try:
+                    cfg = forge_cfg.load()
+                except Exception as e:
+                    return self._err(f"config not loaded: {e}", 503)
+                return self._send({"ok": True, "status": collect(cfg)})
+            if u.path == "/api/ops/report":
+                return self._ops_report(q.get("name", ""))
             return self._err("not found", 404)
         except Exception as e:
             traceback.print_exc()
@@ -186,6 +196,19 @@ class Handler(BaseHTTPRequestHandler):
         if not UI_FILE.exists():
             return self._err("review UI not found", 404)
         self._send(UI_FILE.read_bytes(), ctype="text/html; charset=utf-8")
+
+    def _ops_report(self, name: str):
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+\.md", name or ""):
+            return self._err("invalid report name")
+        from forge_rsi import config as forge_cfg
+        try:
+            root = Path(forge_cfg.load()["paths"]["reports"]).resolve()
+        except Exception as e:
+            return self._err(f"config not loaded: {e}", 503)
+        path = (root / name).resolve()
+        if root not in path.parents or not path.is_file():
+            return self._err("report not found", 404)
+        self._send({"ok": True, "text": path.read_text()})
 
     def _session(self, sid: str):
         if not SESSION_RE.match(sid or ""):

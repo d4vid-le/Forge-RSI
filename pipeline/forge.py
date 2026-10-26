@@ -219,14 +219,26 @@ def adapter_roots() -> list[Path]:
     return roots
 
 
+def _adapter_dirs(root: Path) -> list[Path]:
+    """Find adapter directories at any depth under an adapters root.
+
+    Le-Gates stores adapters as `adapters/skills/<skill>` and
+    `adapters/skills/r2/<skill>`; the old UI only looked one level down and
+    showed the `skills` parent as an unknown adapter.
+    """
+    found: set[Path] = set()
+    for pattern in ("adapters.safetensors", "onepath.safetensors"):
+        for f in root.rglob(pattern):
+            found.add(f.parent)
+    return sorted(found, key=lambda p: str(p.relative_to(root)))
+
+
 def adapters_registry() -> list[dict]:
     out = []
     for root in adapter_roots():
         if not root.is_dir():
             continue
-        for d in sorted(root.iterdir()):
-            if not d.is_dir() or d.name.startswith("."):
-                continue
+        for d in _adapter_dirs(root):
             files = [f.name for f in d.rglob("*.safetensors")] + \
                     [f.name for f in d.iterdir() if f.is_file()]
             cfg = {}
@@ -245,7 +257,8 @@ def adapters_registry() -> list[dict]:
             newest = max((f.stat().st_mtime for f in d.rglob("*") if f.is_file()),
                          default=0)
             out.append(dict(
-                name=d.name, path=str(d), root=str(root), format=fmt,
+                name=str(d.relative_to(root)), path=str(d), root=str(root),
+                format=fmt,
                 size_mb=round(_dir_size_gb(d) * 1000, 1),
                 modified=datetime.fromtimestamp(newest).isoformat(timespec="seconds") if newest else None,
                 rank=(cfg.get("lora_parameters") or {}).get("rank") or cfg.get("r"),

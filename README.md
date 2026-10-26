@@ -178,7 +178,7 @@ python -m forge_rsi skills-decide --run-prefix legates_candidates
 python -m forge_rsi skills-report
 ```
 
-### 4. Ops dashboard
+### 4. Ops dashboard (read-only)
 
 ```bash
 pip install -e '.[dashboard]'
@@ -188,9 +188,29 @@ python -m forge_rsi dashboard
 
 Read-only: it shows the base lock, skill registries, gated evaluations, RSI
 rounds, composition matrix, private-holdout decision, and reports. It has no
-training or promotion endpoints and binds to `127.0.0.1` by default.
+training or promotion endpoints and binds to `127.0.0.1` by default. The same
+overview is embedded as the **Ops** tab in the pipeline UI below.
 
-### 5. SkillForge data pipeline (optional)
+### 5. Data curation + Forge training UI
+
+The pipeline ships the real local UI: **Ops** (read-only overview), **Data**
+(import/clean/review/export), **Forge** (real `mlx_lm.lora` training), and
+**Playground** (real local server).
+
+```bash
+PYTHON=/path/to/mlx-env/bin/python \
+PATH=/path/to/mlx-env/bin:$PATH \
+SKILLFORGE_LABS=/path/to/MiMo-model \
+./sf serve
+# http://127.0.0.1:8010
+```
+
+`SKILLFORGE_LABS` is optional; it adds local model directories that are not in
+the Hugging Face cache. The old React prototype (`workspace/`) is not part of
+this repository: its training backend is simulated. The pipeline UI is the real
+path.
+
+### 6. SkillForge data pipeline (optional)
 
 ```bash
 ./sf import path/to/raw.jsonl --session-name "my run"

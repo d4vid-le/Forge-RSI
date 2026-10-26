@@ -37,6 +37,23 @@
   .views{height:calc(100vh - 46px)}
   .view{display:none;height:100%}
   .view.on{display:grid}
+  #view-ops{grid-template-columns:1fr}
+  #view-ops.on{display:block}
+  .ops-wrap{height:100%;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .ops-head{display:flex;justify-content:space-between;align-items:center}
+  .ops-title{font-size:15px;font-weight:600}
+  .ops-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .ops-kpi{background:var(--elev);border:1px solid var(--line);border-radius:7px;padding:10px 12px}
+  .ops-kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--fg3)}
+  .ops-kpi .v{font-size:20px;font-weight:700;margin-top:3px}
+  .ops-kpi .n{font-size:10.5px;color:var(--fg2);margin-top:2px}
+  .ops-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ops-reports{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .ops-reports button{font-size:11px}
+  .ops-pre{margin:0;max-height:320px;overflow:auto;background:#242424;border:1px solid var(--line);
+           border-radius:5px;padding:10px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap}
+  .ops-note{font-size:11px;color:var(--fg3);margin:4px 0 8px}
+  @media(max-width:1000px){.ops-two{grid-template-columns:1fr}}
   #view-data{grid-template-columns:330px 1fr 300px}
   #view-forge{grid-template-columns:340px 1fr 330px}
   #view-pg{grid-template-columns:320px 1fr 340px}
@@ -110,6 +127,7 @@
 <header>
   <div class="brand">Skill<span>Forge</span></div>
   <div class="tabs">
+    <button id="tab-ops" onclick="setMode('ops')">Ops</button>
     <button id="tab-data" class="on" onclick="setMode('data')">Data</button>
     <button id="tab-forge" onclick="setMode('forge')">Forge</button>
     <button id="tab-pg" onclick="setMode('playground')">Playground</button>
@@ -124,6 +142,23 @@
 <div class="views">
 
   <!-- ══════════════════ DATA ══════════════════ -->
+  <div id="view-ops" class="view">
+    <div class="ops-wrap">
+      <div class="ops-head">
+        <div class="ops-title">Ops overview</div>
+        <button onclick="opsLoad()">Refresh</button>
+      </div>
+      <div id="opsKpis" class="ops-kpis"></div>
+      <section class="card"><h3>Skill adapters</h3><div id="opsSkills"></div></section>
+      <section class="card"><h3>Evaluations</h3><div id="opsEvals"></div></section>
+      <div class="ops-two">
+        <section class="card"><h3>RSI rounds</h3><div id="opsRsi"></div></section>
+        <section class="card"><h3>Composition</h3><div id="opsComp"></div><div id="opsDecision" class="ops-note"></div></section>
+      </div>
+      <section class="card"><h3>Reports</h3><div id="opsReports" class="ops-reports"></div>
+        <pre id="opsReport" class="ops-pre">Select a report.</pre></section>
+    </div>
+  </div>
   <div id="view-data" class="view on">
     <aside class="l">
       <section class="card">
@@ -360,8 +395,8 @@ function log(msg,el){ el=el||"#log"; const l=$(el); if(!l) return;
   l.textContent=new Date().toLocaleTimeString()+"  "+msg+"\n"+l.textContent.split("\n").slice(0,14).join("\n"); }
 
 /* ── modes ─────────────────────────────────────────────────────────────── */
-const VIEW_ID = {data:"view-data", forge:"view-forge", playground:"view-pg"};
-const TAB_ID  = {data:"tab-data",  forge:"tab-forge",  playground:"tab-pg"};
+const VIEW_ID = {ops:"view-ops", data:"view-data", forge:"view-forge", playground:"view-pg"};
+const TAB_ID  = {ops:"tab-ops",  data:"tab-data",  forge:"tab-forge",  playground:"tab-pg"};
 function setMode(m){
   if(!VIEW_ID[m]) m = "data";
   S.mode=m;
@@ -375,6 +410,7 @@ function setMode(m){
   $("#sessionSel").style.display = m==="data" ? "" : "none";
   $("#prog").style.display = m==="data" ? "" : "none";
   localStorage.setItem("sf_mode", m);
+  if(m==="ops") opsLoad();
   if(m==="forge") fgLoad();
   if(m==="playground") pgLoad();
 }
@@ -787,6 +823,90 @@ async function pgServerStatus(){
 }
 async function pgServerStop(){ await post("/api/playground/server/stop",{port:parseInt($("#pgSrvPort").value||8080)});
   clearInterval(S.pgTimer); pgServerStatus(); }
+
+/* ── ops tab ─────────────────────────────────────────────────────────────── */
+let OPS=null;
+function opsEsc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function opsScore(s){ return s&&s.n!=null ? `${s.passed}/${s.n}` : "—"; }
+function opsPill(ok,yes,no){ return `<span class="pill ${ok?"acc":"rej"}">${opsEsc(ok?yes:no)}</span>`; }
+function opsCard(l,v,n){ return `<div class="ops-kpi"><div class="l">${opsEsc(l)}</div><div class="v">${opsEsc(v)}</div><div class="n">${opsEsc(n||"")}</div></div>`; }
+function opsTable(headers,rows,empty){
+  if(!rows||!rows.length) return `<div class="hint">${opsEsc(empty)}</div>`;
+  return `<table><thead><tr>${headers.map(h=>`<th>${opsEsc(h)}</th>`).join("")}</tr></thead><tbody>`+
+    rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;
+}
+async function opsLoad(){
+  try{
+    const d=await api("/api/ops/status"); OPS=d.status; const s=OPS;
+    const ev=s.evaluations||[];
+    const pick=n=>ev.find(r=>r.run===n);
+    const dev=pick("legates_final_dev")||pick("r2_public_dev");
+    const hold=pick("legates_final_holdout");
+    const probes=pick("skills24_fixed_r1_skills")||ev.find(r=>r.run.startsWith("skills24_fixed"));
+    const priv=pick("private_r1_private_holdout")||ev.find(r=>r.run.startsWith("private_r1"));
+    const lint=s.tasks?.lint||{};
+    $("#opsKpis").innerHTML=[
+      opsCard("Dev",opsScore(dev?.gated),dev?`base ${opsScore(dev.base)}`:"no run"),
+      opsCard("Holdout",opsScore(hold?.gated),hold?`base ${opsScore(hold.base)}`:"no run"),
+      opsCard("24 probes",opsScore(probes?.gated),probes?`base ${opsScore(probes.base)}`:"no run"),
+      opsCard("Private holdout",opsScore(priv?.gated),priv?`base ${opsScore(priv.base)}`:"no run"),
+      opsCard("Task lint",lint.ok?"PASS":"FAIL",`${lint.n??0} tasks`),
+      opsCard("Base lock",s.base?.checksums_ok?"OK":(s.base?.checksums_ok===false?"FAIL":"—"),s.base?.exists?"model present":"model missing")
+    ].join("");
+
+    const sk=s.skills||[];
+    $("#opsSkills").innerHTML=opsTable(["round","skill","status","rows","iters","train","val","decision"],
+      sk.map(r=>{
+        const st=r.adapter_exists?r.status:"untrained";
+        return [opsEsc(r.round),`<code>${opsEsc(r.skill)}</code>`,opsPill(st==="promoted"||st==="candidate",st,st),
+          r.rows??"—",r.iters??"—",r.train_loss==null?"—":Number(r.train_loss).toFixed(3),
+          r.val_loss==null?"—":Number(r.val_loss).toFixed(3),opsEsc(r.decision?.reason||"—")];
+      }),"No skill registry found.");
+
+    $("#opsEvals").innerHTML=opsTable(["run","split","base","gated","delta","routed"],
+      ev.map(r=>{
+        const tag=r.run.includes("fixed")?' <span class="pill acc">fixed</span>':
+          ((r.run==="skills24_r1_skills"||r.run==="r2_public_skills")?' <span class="pill run">pre-fix</span>':"");
+        return [`<code>${opsEsc(r.run)}</code>${tag}`,opsEsc(r.split),opsScore(r.base),
+          `<strong>${opsScore(r.gated)}</strong>`,r.delta==null?"—":(r.delta>=0?"+":"")+Number(r.delta).toFixed(2),r.routed];
+      }),"No gated evaluations found.");
+
+    const it=s.rsi?.iterations||[];
+    $("#opsRsi").innerHTML=opsTable(["round","#","candidate","W/L","dev","delta","decision"],
+      it.map(r=>[opsEsc(r.round),r.iteration,`<code>${opsEsc(r.candidate)}</code>`,
+        `${r.wins}/${r.losses}`,r.candidate_score==null?"—":Number(r.candidate_score).toFixed(2),
+        r.delta==null?"—":(r.delta>=0?"+":"")+Number(r.delta).toFixed(2),
+        opsPill(!!r.accepted,"accepted","rejected")]),"No RSI rounds found.");
+
+    const c=s.composition||{}; const cfgs=c.configs||{};
+    $("#opsComp").innerHTML=opsTable(["config","parts word","parts merge","whole"],
+      Object.keys(cfgs).map(k=>[`<code>${opsEsc(k)}</code>`,
+        `${cfgs[k].parts_word??"—"}/${cfgs[k].parts_word_n??"—"}`,
+        `${cfgs[k].parts_merge??"—"}/${cfgs[k].parts_merge_n??"—"}`,
+        `<strong>${cfgs[k].whole_pass}/${cfgs[k].whole_n}</strong>`]),"No composition matrix found.");
+    const dec=s.private_decision||{};
+    $("#opsDecision").innerHTML=dec.promote!==undefined
+      ? `Round 2: <strong>${dec.promote?"promote":"keep round 1"}</strong> · private Δ ${Number(dec.private_delta).toFixed(2)} · ${opsEsc(dec.reason||"")}`
+      : "";
+
+    const reps=s.reports||[];
+    $("#opsReports").innerHTML=reps.length
+      ? reps.map(r=>`<button data-name="${opsEsc(r.name)}">${opsEsc(r.name)}</button>`).join("")
+      : `<span class="hint">No reports found.</span>`;
+    $("#opsReports").querySelectorAll("button").forEach(b=>b.onclick=()=>opsReport(b.dataset.name,b));
+    const first=reps.find(r=>r.name==="final.md")||reps[0];
+    if(first) opsReport(first.name, $("#opsReports").querySelector("button"));
+  }catch(e){
+    $("#opsKpis").innerHTML=`<div class="banner err">${opsEsc(e.message)}</div>`;
+  }
+}
+async function opsReport(name,btn){
+  $("#opsReports").querySelectorAll("button").forEach(b=>b.classList.remove("ok"));
+  if(btn) btn.classList.add("ok");
+  $("#opsReport").textContent="loading…";
+  try{ const d=await api("/api/ops/report?name="+encodeURIComponent(name)); $("#opsReport").textContent=d.text; }
+  catch(e){ $("#opsReport").textContent="Could not load "+name+": "+e.message; }
+}
 
 /* ── global keys ───────────────────────────────────────────────────────── */
 document.addEventListener("keydown",ev=>{

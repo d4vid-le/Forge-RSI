@@ -84,7 +84,21 @@ runs/                     per-run JSON + append-only iteration logs
 adapters/                 candidate adapters (never auto-promoted)
 ```
 
-## 5. Dashboard
+## 5. Data curation + Forge training UI
+
+```bash
+PYTHON=/path/to/mlx-env/bin/python \
+PATH=/path/to/mlx-env/bin:$PATH \
+SKILLFORGE_LABS=/path/to/MiMo-model \
+./sf serve
+# http://127.0.0.1:8010
+```
+
+Tabs: **Ops** (read-only overview), **Data** (curation), **Forge** (real
+`mlx_lm.lora` training), **Playground** (real local server). The Forge tab
+refuses to train if `mlx_lm.lora`, the model, or the dataset is missing.
+
+## 6. Ops dashboard
 
 ```bash
 python -m forge_rsi dashboard
@@ -93,7 +107,7 @@ python -m forge_rsi dashboard
 
 Read-only. No training or promotion from the UI.
 
-## 6. Round 2 (optional)
+## 7. Round 2 (optional)
 
 ```bash
 python scripts/train_round2.py

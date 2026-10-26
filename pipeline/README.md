@@ -81,9 +81,23 @@ should print 12.
 
 ## Review UI (line-by-line)
 
+The UI has four tabs: **Ops** (read-only lab overview), **Data** (curation),
+**Forge** (real `mlx_lm.lora` training), and **Playground** (real local server).
+
 ```bash
 ./sf serve                    # http://127.0.0.1:8010
 ./sf serve --port 8020        # different port
+```
+
+For Forge training, run the server under the MLX environment and put its bin on
+`PATH` so `mlx_lm.lora` / `mlx_lm.server` are found. If your models live outside
+the Hugging Face cache, point `SKILLFORGE_LABS` at the model directory:
+
+```bash
+PYTHON=/path/to/mlx-env/bin/python \
+PATH=/path/to/mlx-env/bin:$PATH \
+SKILLFORGE_LABS=/path/to/MiMo-model \
+./sf serve
 ```
 
 Open the URL, then either paste a path/glob/folder (best for large downloads —
