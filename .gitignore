@@ -27,3 +27,7 @@ __pycache__/
 # UI: keep the prebuilt product (ui/dist) for users who do not run Node.
 ui/node_modules/
 ui/.vite/
+
+# Local planning notes that carry operator paths.
+docs/PLAN.md
+PAPER.md
