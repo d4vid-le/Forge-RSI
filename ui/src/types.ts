@@ -180,6 +180,34 @@ export type PlaygroundStatus = {
   servers?: Record<string, { running: boolean; models?: string[]; [key: string]: unknown }>;
 };
 
+export type JobStep = {
+  name: string;
+  cmd: string[];
+  status: string;
+  exit_code?: number | null;
+  started?: string | null;
+  finished?: string | null;
+  gate?: boolean;
+  guard?: string;
+  index?: number;
+};
+
+export type Job = {
+  id: string;
+  kind: string;
+  params: Record<string, unknown>;
+  steps: JobStep[];
+  status: string;
+  created: string;
+  started?: string | null;
+  finished?: string | null;
+  approved?: boolean | null;
+  note?: string;
+  current?: number;
+  pid?: number | null;
+  log: string;
+};
+
 export type ChatResponse = {
   text: string;
   model?: string;

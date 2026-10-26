@@ -155,6 +155,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send({"ok": True, "status": collect(cfg)})
             if u.path == "/api/ops/report":
                 return self._ops_report(q.get("name", ""))
+            if u.path == "/api/jobs":
+                from .jobs import queue
+                return self._send({"ok": True, "jobs": queue().list()})
+            if u.path == "/api/jobs/log":
+                from .jobs import JobError, queue
+                try:
+                    text = queue().log_tail(q.get("id", ""),
+                                            int(q.get("lines") or 80))
+                except JobError as e:
+                    return self._err(e, 404)
+                return self._send({"ok": True, "text": text})
             return self._err("not found", 404)
         except Exception as e:
             traceback.print_exc()
@@ -192,6 +203,32 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/playground/server/stop":
                 return self._send({"ok": True, "result": pg_mod.stop_mlx_server(
                     int(body.get("port") or 8080))})
+            if u.path == "/api/jobs":
+                from .jobs import JobError, queue
+                try:
+                    job = queue().submit(body.get("kind") or "",
+                                         body.get("params") or {})
+                except JobError as e:
+                    return self._err(e, 422)
+                return self._send({"ok": True, "job": job})
+            if u.path == "/api/jobs/approve":
+                from .jobs import JobError, queue
+                approve = body.get("approve")
+                if not isinstance(approve, bool):
+                    return self._err("approve must be true or false", 422)
+                try:
+                    job = queue().approve(body.get("id") or "", approve,
+                                          str(body.get("note") or ""))
+                except JobError as e:
+                    return self._err(e, 422)
+                return self._send({"ok": True, "job": job})
+            if u.path == "/api/jobs/cancel":
+                from .jobs import JobError, queue
+                try:
+                    job = queue().cancel(body.get("id") or "")
+                except JobError as e:
+                    return self._err(e, 422)
+                return self._send({"ok": True, "job": job})
             return self._err("not found", 404)
         except Exception as e:
             traceback.print_exc()

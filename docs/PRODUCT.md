@@ -86,20 +86,30 @@ incumbent.
 - A private holdout for the promotion decision (withheld from the public repo).
 - A fresh private holdout whenever a blind claim is needed.
 
-## Stage 7 — automation (next)
+## Stage 7 — automation
 
-The final state is an automated loop with explicit human gates:
+The queue is the first automation layer. It ships with explicit human gates:
 
-- a job queue for data → train → eval → report;
+- **Guarded jobs** — allowlisted chains for a skill round (corpora → train →
+  gated eval → gate → decision → reports) and an RSI round (loop → gate →
+  reports). Parameters are validated; there is no shell or free-form argv.
+- **Base-lock guard** — training steps refuse to start when the base is missing
+  or its recorded lock no longer matches.
+- **One at a time** — a single worker preserves CPU/memory and makes the order
+  auditable. Output goes to `runs/jobs/<id>.log`; state to `data/jobs.json`.
+- **Human promotion gate** — a measured job stops at `awaiting_approval`.
+  Approving resumes the decision/report steps; rejecting records no promotion
+  and leaves the adapters on disk.
+
+Still ahead:
+
 - gap detection from task clusters that fail under every accepted harness;
 - automatic corpus generation and curation suggestions;
 - private-holdout rotation;
-- a router that can be evaluated offline (Dream replay) before deployment;
-- promotion requires the documented rule **and** human approval.
+- a router that can be evaluated offline (Dream replay) before deployment.
 
-The current UI is deliberately read-only for long loops. Training and RSI runs
-remain visible, explicit CLI actions until the job queue and base-lock checks
-ship.
+The queue is sequential on purpose. Promotion always requires the documented
+rule **and** a human approval.
 
 ## What is not claimed
 

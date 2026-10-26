@@ -15,6 +15,7 @@ byte-identical the whole time.
 | **Overview** | Base lock, skill registry, gated evaluations, RSI rounds, composition, reports |
 | **Data** | Import → clean → review → accept/reject/edit → export through hard gates |
 | **Train** | Real `mlx_lm.lora` training: dataset prep, LoRA config, exact command preview, live loss/log |
+| **Jobs** | Guarded queue: allowlisted data → train → eval → report chains with a human promotion gate |
 | **Skills** | Le-Gates adapters: rank-8 deltas on the frozen base, one gate at a time, quarantine-first |
 | **RSI** | Harness proposals, pairwise accept/reject, holdout guards, cost-aware acceptance |
 | **Playground** | Real local chat and robustness probe against `mlx_lm.server` or Ollama |
@@ -67,10 +68,20 @@ npm --prefix ui run dev      # http://127.0.0.1:5173, /api proxied to :8010
 npm --prefix ui run build    # writes ui/dist, served by ./sf serve
 ```
 
+### Tests
+
+Deterministic stdlib checks for the Forge log parser and the guarded queue
+(no model, no network):
+
+```bash
+python -m unittest discover -s tests
+```
+
 ## The loop
 
 ```
 Data → Train → Skills → RSI → Playground → Telemetry
+                    Jobs orchestrates and gates the long chains
 ```
 
 - **Data**: import raw JSON/JSONL, clean, review, export. The export gate refuses
@@ -83,12 +94,16 @@ Data → Train → Skills → RSI → Playground → Telemetry
 - **RSI**: the teacher proposes a harness, the loop runs the frozen tasks,
   compares task-by-task, and keeps the candidate only if it wins, stays near the
   cost ceiling, and passes the anti-leak validator. Ties keep the incumbent.
+- **Jobs**: queue an explicit chain (skill round or RSI round). The API accepts
+  only allowlisted parameters, records the exact argv, streams the child's output,
+  and stops at a human gate before promotion. Training steps check the base lock
+  first; a mismatch fails the job before any weights are touched.
 - **Playground**: chat and probe a real local server; no server, no reply.
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
-The next program is automation: a job queue with base-lock checks, gap detection,
-automatic curation, training, and evaluation, with human approval at the
-promotion gate. The current UI is deliberately read-only for long loops.
+The remaining automation work is gap detection, automatic curation suggestions,
+and private-holdout rotation. The queue is intentionally sequential and still
+requires a human at the promotion gate.
 
 ## Measured state
 
@@ -109,7 +124,7 @@ Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 
 ```
 ui/                 React + Vite + Tailwind product UI (prebuilt in ui/dist)
-pipeline/           data curation, Forge (mlx_lm.lora), Playground, local API
+pipeline/           data curation, Forge (mlx_lm.lora), Playground, jobs, local API
 forge_rsi/          RSI loop, Le-Gates, Dream replay, SkillForge bridge, trainer
 dashboard/          standalone read-only Ops collector
 tasks/              20 dev + 10 holdout + 24 skill probes + composition

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity, Database, Flame, FlaskConical, LayoutDashboard, Layers3, MessageSquare,
+  Activity, Database, Flame, FlaskConical, LayoutDashboard, Layers3,
+  ListChecks, MessageSquare,
 } from "lucide-react";
 import { api, errorMessage } from "./api";
 import type { ForgeStatus } from "./types";
@@ -13,8 +14,10 @@ import { SkillsView } from "./views/SkillsView";
 import { RsiView } from "./views/RsiView";
 import { PlaygroundView } from "./views/PlaygroundView";
 import { TelemetryView } from "./views/TelemetryView";
+import { JobsView } from "./views/JobsView";
 
-type View = "overview" | "data" | "train" | "skills" | "rsi" | "playground" | "telemetry";
+type View =
+  | "overview" | "data" | "train" | "jobs" | "skills" | "rsi" | "playground" | "telemetry";
 
 const NAV: { group: string; items: { id: View; label: string; icon: LucideIcon }[] }[] = [
   {
@@ -23,6 +26,7 @@ const NAV: { group: string; items: { id: View; label: string; icon: LucideIcon }
       { id: "overview", label: "Overview", icon: LayoutDashboard },
       { id: "data", label: "Data", icon: Database },
       { id: "train", label: "Train", icon: Flame },
+      { id: "jobs", label: "Jobs", icon: ListChecks },
     ],
   },
   {
@@ -168,6 +172,7 @@ export default function App() {
           {view === "overview" && <OverviewView />}
           {view === "data" && <DataView />}
           {view === "train" && <TrainView />}
+          {view === "jobs" && <JobsView />}
           {view === "skills" && <SkillsView />}
           {view === "rsi" && <RsiView />}
           {view === "playground" && <PlaygroundView />}

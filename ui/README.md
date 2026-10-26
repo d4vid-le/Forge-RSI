@@ -7,6 +7,7 @@ The React workbench served by the pipeline at `http://127.0.0.1:8010`.
 - **Overview** — base lock, skill registry, gated evaluations, RSI, composition, reports.
 - **Data** — sessions, import, review queue, row detail, accept/reject/edit, export.
 - **Train** — environment, model + base lock, dataset, LoRA config, command preview, live run.
+- **Jobs** — allowlisted chains, step timeline, live log, human approve/reject gate.
 - **Skills** — Le-Gates registry, zero-forgetting checks, composition.
 - **RSI** — proposals, pairwise outcomes, holdout guards, decision.
 - **Playground** — real local chat, robustness probe, `mlx_lm.server` control.
@@ -45,6 +46,7 @@ The prebuilt `ui/dist` is included so end users do not need Node.
 | Overview / Skills / RSI / Telemetry | `/api/ops/status`, `/api/ops/report?name=` |
 | Data | `/api/sessions`, `/api/session`, `/api/rows`, `/api/decide`, `/api/bulk`, `/api/edit`, `/api/import`, `/api/export`, `/api/quarantine` |
 | Train | `/api/forge/status`, `/api/forge/base-lock`, `/api/forge/prepare`, `/api/forge/train`, `/api/forge/stop`, `/api/forge/run` |
+| Jobs | `/api/jobs`, `/api/jobs/log`, `/api/jobs/approve`, `/api/jobs/cancel` |
 | Playground | `/api/playground/status`, `/api/playground/chat`, `/api/playground/probe`, `/api/playground/server/*` |
 
 `/api/ops/status` returns `{ok: true, status: {...}}`; the other endpoints return

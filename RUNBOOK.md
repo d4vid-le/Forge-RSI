@@ -88,7 +88,22 @@ A skill is promoted only if it gains on dev **and** on held-out probes, with no
 non-routed change and no holdout regression. Otherwise it is quarantined
 (gated to 0), never deleted.
 
-## 5. RSI harness round
+## 5. Guarded jobs
+
+The **Jobs** view queues an explicit chain and stops at a human gate:
+
+- **Skill round** — build corpora → train adapters → gated evaluation →
+  **human gate** → promotion decision → reports.
+- **RSI round** — harness loop → **human gate** → round report → final report.
+- **Reports only** — regenerate the measured reports from disk.
+
+The API accepts only allowlisted parameters; there is no shell and no free-form
+argv. Each step's command is recorded and its output streamed to
+`runs/jobs/<job>.log`. Jobs run one at a time. Training steps check the base
+lock first and fail before touching weights on a mismatch. Rejecting a job
+leaves the adapters on disk but records no promotion.
+
+## 6. RSI harness round
 
 ```bash
 python -m forge_rsi loop --round r1 --iterations 5
@@ -104,7 +119,7 @@ A candidate is kept only if:
 Ties keep the incumbent. The holdout is a regression guard, never an
 optimization signal.
 
-## 6. Reports and telemetry
+## 7. Reports and telemetry
 
 The **Telemetry** view and `reports/` are generated from disk:
 
@@ -121,7 +136,7 @@ runs/                     per-run JSON + append-only iteration logs
 adapters/                 candidate adapters (never auto-promoted)
 ```
 
-## 7. Round 2 / private holdout
+## 8. Round 2 / private holdout
 
 ```bash
 python scripts/train_round2.py
@@ -132,7 +147,7 @@ Round 2 is evaluated on a **private holdout** that is not in the public repo.
 The promotion rule is stricter: private-holdout gain, no public dev/probe
 regression, and no forgetting. A tie keeps the incumbent.
 
-## 8. Tests and full reproducibility
+## 9. Tests and full reproducibility
 
 The Forge log parser has deterministic stdlib tests (no model, no network):
 

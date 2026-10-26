@@ -3,7 +3,8 @@
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  ui/ — React + Vite + Tailwind workbench                            │
-│  Overview · Data · Train · Skills · RSI · Playground · Telemetry    │
+│  Overview · Data · Train · Jobs · Skills · RSI · Playground         │
+│  Telemetry                                                          │
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │ same-origin /api
 ┌───────────────────────────────▼─────────────────────────────────────┐
@@ -41,6 +42,7 @@
   `/api/forge/train`, `/api/forge/stop`, `/api/forge/run`.
 - Playground: `/api/playground/status`, `/api/playground/chat`,
   `/api/playground/probe`, `/api/playground/server/*`.
+- Jobs: `/api/jobs`, `/api/jobs/log`, `/api/jobs/approve`, `/api/jobs/cancel`.
 - Ops: `/api/ops/status`, `/api/ops/report`.
 - Static: `/`, `/assets/*` from `ui/dist`, `/classic` for the old page.
 
@@ -57,6 +59,7 @@ it. Training is refused if `mlx_lm.lora`, the model, or prepared data is missing
 | `pipeline/export.py` | hard gates, manifest, rejected bundle |
 | `pipeline/forge.py` | dataset prep, `mlx_lm.lora` wrapper, run telemetry |
 | `pipeline/playground.py` | endpoint discovery, real chat, robustness probe, server control |
+| `pipeline/jobs.py` | allowlisted job chains, base-lock guard, human gate, sequential runner |
 | `forge_rsi/agent.py` | MLX generation, code extraction, tool feedback |
 | `forge_rsi/verifier.py` | deterministic temp-dir unittest runner |
 | `forge_rsi/harness.py` | harness schema / validation / rendering |
@@ -102,3 +105,7 @@ raw JSONL ──ingest──▶ records ──clean──▶ rows ──review�
 6. **Ties keep the incumbent.** A candidate must win.
 7. **Quarantine, don't delete.** A failed adapter is gated to 0 and retained.
 8. **No invented numbers.** Every displayed metric is read from a run artifact.
+9. **Allowlisted jobs only.** The queue builds argv from validated parameters;
+   there is no shell, no free-form command, and one job runs at a time.
+10. **Human promotion gate.** A measured job stops at `awaiting_approval`; a
+    rejection records no promotion and leaves the artifacts on disk.
