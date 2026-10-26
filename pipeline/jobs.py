@@ -1,4 +1,4 @@
-"""Guarded, sequential job queue for the SkillForge loop.
+"""Guarded, sequential job queue for the Forge-RSI loop.
 
 Every job is an explicit, allowlisted chain of CLI steps. There is no shell and
 no free-form command: the API validates parameters, records the exact argv, and

@@ -1,6 +1,6 @@
 """Le-Gates skill isolation for the baby model.
 
-This is the mechanism from `PAPER.md` / the SkillForge Le-Gates design:
+This is the mechanism from `PAPER.md` / the Forge-RSI Le-Gates design:
 
     y = base(x) + sum_k gate_k * scale_k * (x @ A_k) @ B_k
     gate_k in {0,1},  sum_k gate_k <= 1
