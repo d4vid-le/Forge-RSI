@@ -145,6 +145,80 @@ def _rsi(cfg: dict) -> tuple[list[dict], list[dict]]:
     return iters, holds
 
 
+def _dream(cfg: dict) -> dict | None:
+    files = sorted(Path(cfg["paths"]["runs"]).glob("dream_*.json"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    for p in files:
+        d = _load(p)
+        if d and "policies" in d:
+            break
+    else:
+        return None
+    return {
+        "run_id": d.get("run_id"),
+        "harness": d.get("harness"),
+        "winner": d.get("winner"),
+        "note": d.get("note"),
+        "policies": d.get("policies") or [],
+    }
+
+
+def _gaps(cfg: dict) -> dict | None:
+    files = sorted(Path(cfg["paths"]["runs"]).glob("gaps_*.json"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    if not files:
+        return None
+    d = _load(files[0])
+    if not d:
+        return None
+    clusters = []
+    for c in d.get("clusters") or []:
+        clusters.append({
+            "key": c.get("key"),
+            "failed": c.get("failed"),
+            "total": c.get("total"),
+            "by_error": c.get("by_error") or {},
+            "verified_rows": c.get("verified_rows", 0),
+            "missing": len(c.get("missing") or []),
+        })
+    corpus = d.get("corpus") or None
+    if corpus:
+        corpus = {
+            "file": Path(corpus.get("file", "")).name,
+            "rows": corpus.get("rows"),
+            "verified": corpus.get("verified"),
+            "by_kind": corpus.get("by_kind") or {},
+            "missing": len(corpus.get("missing") or []),
+        }
+    return {
+        "run_id": d.get("run_id"),
+        "split": d.get("split"),
+        "generated_at": d.get("generated_at"),
+        "summary": d.get("summary") or {},
+        "clusters": clusters,
+        "corpus": corpus,
+        "policy": d.get("policy"),
+    }
+
+
+def _holdout(cfg: dict) -> dict:
+    try:
+        from forge_rsi import holdout as holdout_mod
+        st = holdout_mod.status(cfg)
+    except Exception as e:
+        return {"exists": False, "count": 0, "error": str(e)}
+    man = st.get("manifest") or {}
+    return {
+        "exists": st.get("exists"),
+        "count": st.get("count", 0),
+        "created_at": man.get("created_at"),
+        "seed": man.get("seed"),
+        "combined_sha256": st.get("combined_sha256"),
+        "archives": len(st.get("archives") or []),
+        "latest_archive": st.get("latest_archive"),
+    }
+
+
 def _reports(cfg: dict) -> list[dict]:
     reports = Path(cfg["paths"]["reports"])
     out = []
@@ -190,5 +264,8 @@ def collect(cfg: dict) -> dict:
         "rsi": {"iterations": iters, "holdout": holds},
         "composition": _load(runs / "composition_matrix.json", {}),
         "private_decision": _load(runs / "private_round2_decision.json", {}),
+        "dream": _dream(cfg),
+        "gaps": _gaps(cfg),
+        "holdout": _holdout(cfg),
         "reports": _reports(cfg),
     }

@@ -15,7 +15,7 @@ byte-identical the whole time.
 | **Overview** | Base lock, skill registry, gated evaluations, RSI rounds, composition, reports |
 | **Data** | Import → clean → review → accept/reject/edit → export through hard gates |
 | **Train** | Real `mlx_lm.lora` training: dataset prep, LoRA config, exact command preview, live loss/log |
-| **Jobs** | Guarded queue: allowlisted data → train → eval → report chains with a human promotion gate |
+| **Jobs** | Guarded queue: skill, gap, RSI, Dream, and holdout-rotation chains with a human gate |
 | **Skills** | Le-Gates adapters: rank-8 deltas on the frozen base, one gate at a time, quarantine-first |
 | **RSI** | Harness proposals, pairwise accept/reject, holdout guards, cost-aware acceptance |
 | **Playground** | Real local chat and robustness probe against `mlx_lm.server` or Ollama |
@@ -94,10 +94,18 @@ Data → Train → Skills → RSI → Playground → Telemetry
 - **RSI**: the teacher proposes a harness, the loop runs the frozen tasks,
   compares task-by-task, and keeps the candidate only if it wins, stays near the
   cost ceiling, and passes the anti-leak validator. Ties keep the incumbent.
-- **Jobs**: queue an explicit chain (skill round or RSI round). The API accepts
-  only allowlisted parameters, records the exact argv, streams the child's output,
-  and stops at a human gate before promotion. Training steps check the base lock
+- **Jobs**: queue an explicit chain — skill round, gap round, RSI round, Dream
+  round, or holdout rotation. The API accepts only allowlisted parameters,
+  records the exact argv, streams the child's output, and stops at a human gate
+  before promotion or holdout replacement. Training steps check the base lock
   first; a mismatch fails the job before any weights are touched.
+- **Gaps**: group measured failures by skill, then mine only *re-verified*
+  passing traces into a raw corpus. Public and private holdouts are excluded.
+- **Dream**: collect K candidates on a dev run, then replay selection policies
+  offline over the cached candidates. The oracle is an upper bound, never shipped.
+- **Holdout rotation**: generate a fresh private set from deterministic
+  templates, verify every reference, archive the previous set, and publish only
+  counts/hashes. The prompts and hidden tests stay local.
 - **Playground**: chat and probe a real local server; no server, no reply.
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
@@ -116,16 +124,19 @@ requires a human at the promotion gate.
 | Round 2 | tied the blind holdout; kept round 1 |
 | RSI | r1 rejected repeated `run_tests`; r1b accepted `nonstub_retry` |
 | Composition | parts work; the compound whole does not |
+| Dream replay | `test_gated` 10/12 vs `first` 9/12 on 12 probes × 3 samples |
+| Gap mining | 14 failing probes → 28 re-verified rows, holdouts excluded |
 
 Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
-`composition.md`, `private_holdout.md`, `r1.md`, `r1b.md`.
+`composition.md`, `private_holdout.md`, `gaps.md`, `dream.md`, `r1.md`,
+`r1b.md`.
 
 ## Architecture
 
 ```
 ui/                 React + Vite + Tailwind product UI (prebuilt in ui/dist)
 pipeline/           data curation, Forge (mlx_lm.lora), Playground, jobs, local API
-forge_rsi/          RSI loop, Le-Gates, Dream replay, SkillForge bridge, trainer
+forge_rsi/          RSI loop, Le-Gates, gaps, Dream replay, holdout rotation, trainer
 dashboard/          standalone read-only Ops collector
 tasks/              20 dev + 10 holdout + 24 skill probes + composition
 harness/            append-only harness versions
@@ -144,6 +155,10 @@ See [Architecture](docs/ARCHITECTURE.md) for the data flow and gates,
 - The base model is frozen and checksum-verified; training writes adapter files only.
 - Non-routed tasks are copied from the base run, so forgetting is zero by construction.
 - The export gate is fail-closed. Adapters are quarantine-first.
+- Gap mining refuses the public and private holdouts, and re-verifies every
+  corpus row with the task's hidden tests before writing it.
+- Private-holdout prompts and tests are local-only; rotation archives the old
+  set and publishes only counts and hashes.
 - Model weights, generated corpora, raw runs, session DBs, and personal paths are
   not committed.
 - The 10 holdout tasks are public. They are a regression set, not a blind holdout;

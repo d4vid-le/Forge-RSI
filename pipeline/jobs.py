@@ -28,7 +28,8 @@ NAME_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{1,63}$")
 ROUND_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$")
 
-KINDS = ("skills_round", "rsi_round", "reports")
+KINDS = ("skills_round", "rsi_round", "gap_round", "holdout_rotate",
+         "dream_round", "reports")
 
 
 class JobError(ValueError):
@@ -119,6 +120,51 @@ def build_steps(kind: str, params: dict, python: str | None = None) -> tuple[lis
                  guard="base", gate=True),
             dict(name="round report", cmd=base + ["report", "--round", rnd]),
             dict(name="final report", cmd=base + ["final-report"]),
+        ]
+    elif kind == "gap_round":
+        run_id = str(params.get("run_id") or "latest").strip()
+        if run_id not in ("latest", "auto") and not RUN_ID_RE.match(run_id):
+            raise JobError("run_id must be 'latest' or a valid run id")
+        min_rows = _int(params, "min_rows", 1, 100, 1)
+        normalised = dict(run_id=run_id, min_rows=min_rows)
+        steps = [
+            dict(name="detect gaps", cmd=base + ["gaps-detect", "--run", run_id]),
+            dict(name="mine verified corpus", cmd=base + ["gaps-mine", "--run", run_id,
+                                                          "--min-rows", str(min_rows)]),
+        ]
+    elif kind == "holdout_rotate":
+        count = _int(params, "count", 4, 40, 10)
+        raw_seed = params.get("seed")
+        seed = None
+        if raw_seed not in (None, ""):
+            try:
+                seed = int(raw_seed)
+            except (TypeError, ValueError):
+                raise JobError("seed must be an integer")
+            if not 0 <= seed <= 2**31 - 1:
+                raise JobError("seed must be between 0 and 2^31-1")
+        normalised = dict(count=count, seed=seed)
+        rotate_cmd = base + ["holdout-rotate", "--count", str(count), "--force"]
+        if seed is not None:
+            rotate_cmd += ["--seed", str(seed)]
+        steps = [
+            dict(name="current holdout", cmd=base + ["holdout-status"], gate=True),
+            dict(name="rotate holdout", cmd=rotate_cmd),
+            dict(name="new holdout", cmd=base + ["holdout-status"]),
+        ]
+    elif kind == "dream_round":
+        run_id = str(params.get("run_id") or
+                     f"dream_{time.strftime('%Y%m%d_%H%M%S')}").strip()
+        if not RUN_ID_RE.match(run_id):
+            raise JobError("run_id must be 2-64 chars: letters, digits, dot, dash, underscore")
+        samples = _int(params, "samples", 1, 5, 3)
+        normalised = dict(run_id=run_id, samples=samples)
+        steps = [
+            dict(name="collect candidates", cmd=base + [
+                "eval", "--harness", "harness/h0_baseline.json", "--split", "dev",
+                "--run-id", run_id, "--samples", str(samples)]),
+            dict(name="replay policies", cmd=base + ["dream", "--run", run_id]),
+            dict(name="dream report", cmd=base + ["dream-report", "--run", run_id]),
         ]
     elif kind == "reports":
         normalised = {}

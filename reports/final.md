@@ -44,6 +44,23 @@ The holdout is a fixed public regression set, used only as a guard, never to cho
 | `probe_nonstub` | 20/20 | 56.2 | generic anti-stub retry; sole multi-turn task was the stub failure |
 | `probe_plan` | 19/20 | 179.0 | fixes the stubborn stub but costs 2.4x tokens and introduces dev_018 failure |
 
+## Dream replay (Layer 2)
+
+Selection policies re-rank the *same* cached candidates. `best_of_k_oracle` is an upper bound and is never deployed.
+
+| run | policy | score | passed | calls | tokens | V |
+|---|---|---|---|---|---|---|
+| `dream_skills_k3` | first | 0.75 | 9/12 | 12 | 1,484 | 0.690 |
+| `dream_skills_k3` | longest | 0.67 | 8/12 | 36 | 4,663 | 0.487 |
+| `dream_skills_k3` | majority | 0.75 | 9/12 | 36 | 4,663 | 0.570 |
+| `dream_skills_k3` | test_gated **(winner)** | 0.83 | 10/12 | 36 | 4,663 | 0.653 |
+| `dream_skills_k3` | best_of_k_oracle | 0.83 | 10/12 | 36 | 4,663 | 0.653 |
+| `skills24_fixed_r1_skills_gated` | first **(winner)** | 1.00 | 24/24 | 24 | 1,694 | 0.880 |
+| `skills24_fixed_r1_skills_gated` | longest | 1.00 | 24/24 | 24 | 1,694 | 0.880 |
+| `skills24_fixed_r1_skills_gated` | majority | 1.00 | 24/24 | 24 | 1,694 | 0.880 |
+| `skills24_fixed_r1_skills_gated` | test_gated | 1.00 | 24/24 | 24 | 1,694 | 0.880 |
+| `skills24_fixed_r1_skills_gated` | best_of_k_oracle | 1.00 | 24/24 | 24 | 1,694 | 0.880 |
+
 ## Le-Gates skill isolation (frozen base + gated adapters)
 
 | skill | status | dev gain | probe gain (12) | reason |
@@ -115,11 +132,26 @@ scores are reported; the task definitions are not published.
 
 ## SkillForge data (Layer 3)
 
-These are plumbing smoke-test rows, not a capability claim.
+Gap rows are re-verified traces mined from measured runs; the
+bridge rows are plumbing smoke tests. Neither is a held-out claim.
 
 | file | rows | success | repair | tasks covered | runs |
 |---|---|---|---|---|---|
 | `20261025-121419-rsi-bridge_smoke-raw.jsonl` | 18 | 18 | 0 | 18 | r1_h0 |
+| `20261026-010436-gap-skills24_fixed_r1_skills_base-raw.jsonl` | 28 | 14 | 14 | 14 | skills24_fixed_r2_skills_merge_intervals, skills24_fixed_r2_skills_word_freq |
+| `20261026-010806-gap-skills24_fixed_r2_skills_base-raw.jsonl` | 28 | 14 | 14 | 14 | skills24_fixed_r2_skills_merge_intervals, skills24_fixed_r2_skills_word_freq |
+
+## Skill gaps (latest)
+
+- source run: `skills24_fixed_r2_skills_base` · split **skills**
+- holdouts are excluded from gap mining; every corpus row was re-verified
+
+| skill | failed | total | verified rows | missing |
+|---|---|---|---|---|
+| `word_freq` | 11 | 12 | 22 | 0 |
+| `merge_intervals` | 3 | 12 | 6 | 0 |
+
+Corpus: `20261026-010806-gap-skills24_fixed_r2_skills_base-raw.jsonl` — **28** rows (28 verified).
 
 ## Limitations (read this before quoting a number)
 

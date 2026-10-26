@@ -78,6 +78,57 @@ def run_and_write(cfg: dict, run: dict) -> dict:
     return result
 
 
+def load_result(cfg: dict, run_id: str | None = None) -> dict:
+    runs = Path(cfg["paths"]["runs"])
+    if run_id:
+        candidates = [runs / run_id, runs / f"{run_id}.json",
+                      runs / f"dream_{run_id}.json"]
+        for p in candidates:
+            if p.exists():
+                d = json.loads(p.read_text())
+                if isinstance(d, dict) and "policies" in d:
+                    return d
+        raise FileNotFoundError(f"no Dream replay for {run_id!r}")
+    files = [p for p in sorted(runs.glob("dream_*.json"),
+                               key=lambda x: x.stat().st_mtime, reverse=True)
+             if "policies" in json.loads(p.read_text())]
+    if not files:
+        raise FileNotFoundError("no Dream replay found; run `dream --run <run-id>` first")
+    return json.loads(files[0].read_text())
+
+
+def write_report(cfg: dict, run_id: str | None = None) -> tuple[Path, dict]:
+    result = load_result(cfg, run_id)
+    reports = Path(cfg["paths"]["reports"])
+    reports.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Dream replay",
+        "",
+        f"- source run: `{result.get('run_id')}`",
+        f"- harness: `{result.get('harness') or '—'}`",
+        f"- winner: **{result.get('winner')}**",
+        f"- note: {result.get('note', '')}",
+        "",
+        "| policy | score | passed | calls | tokens out | value |",
+        "|---|---|---|---|---|---|",
+    ]
+    for r in result.get("policies", []):
+        lines.append(
+            f"| `{r['policy']}` | {r['score']:.2f} | {r['passed']}/{r['n']} | "
+            f"{r['calls']} | {r['tokens_out']} | {r['value']:.3f} |")
+    lines += [
+        "",
+        "This is offline policy search over cached candidates. It makes no model",
+        "calls and does not claim a new prompt was evaluated. The winner is chosen",
+        "by score; tokens break ties. `value` is diagnostic. `best_of_k_oracle`",
+        "is an upper bound and is never deployed.",
+        "",
+    ]
+    path = reports / "dream.md"
+    path.write_text("\n".join(lines) + "\n")
+    return path, result
+
+
 def format_table(result: dict) -> str:
     lines = [f"Dream replay — {result['run_id']} (harness {result['harness']})",
              f"{'policy':18}{'score':>8}{'passed':>9}{'calls':>7}{'tokens':>9}{'V':>9}"]

@@ -4,7 +4,7 @@ import { api, errorMessage } from "../api";
 import type { OpsStatus } from "../types";
 import {
   Button, Card, CardHeader, Empty, ErrorBanner, KV, PageHeader, Pill, Score,
-  Stat, ViewShell, fmt,
+  Stat, ViewShell, cx, dateLabel, fmt,
 } from "../components/ui";
 
 export function SkillsView() {
@@ -82,6 +82,12 @@ export function SkillsView() {
               <KV k="holdout" v={`${hold?.base.passed ?? "—"}/${hold?.base.n ?? "—"} → ${hold?.gated.passed ?? "—"}/${hold?.gated.n ?? "—"}`} mono />
               <KV k="private" v={`${priv?.base.passed ?? "—"}/${priv?.base.n ?? "—"} → ${priv?.gated.passed ?? "—"}/${priv?.gated.n ?? "—"}`} mono />
               <KV k="non-routed identical" v={String(priv?.non_routed_identical ?? hold?.non_routed_identical ?? "—")} />
+              <KV k="private holdout" v={status?.holdout?.exists ? `${status.holdout.count} tasks` : "missing"} />
+              <KV k="rotated" v={status?.holdout?.created_at ? dateLabel(status.holdout.created_at) : "not recorded"} />
+            </div>
+            <div className="mt-2 text-[10px] leading-relaxed text-dim">
+              Rotation is a gated job. The public 10-task holdout stays a regression
+              set; a blind claim needs the private set.
             </div>
           </Card>
         </div>

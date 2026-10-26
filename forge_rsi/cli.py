@@ -1,7 +1,7 @@
 """Forge-RSI command line.
 
-Run with an environment that has MLX installed:
-    python -m forge_rsi <command> ...
+Run with the MLX environment:
+    /Users/dblab/mlx-env/bin/python -m forge_rsi <command> ...
 """
 from __future__ import annotations
 
@@ -305,6 +305,58 @@ def cmd_report(cfg: dict, a) -> int:
     return 0
 
 
+def cmd_gaps_detect(cfg: dict, a) -> int:
+    from . import gaps
+    try:
+        report = gaps.detect(cfg, a.run)
+    except gaps.GapError as e:
+        print(f"[gaps] {e}", file=sys.stderr)
+        return 4
+    print(gaps.format_report(report))
+    return 0
+
+
+def cmd_gaps_mine(cfg: dict, a) -> int:
+    from . import gaps
+    try:
+        report = gaps.mine(cfg, a.run, min_rows=a.min_rows)
+    except gaps.GapError as e:
+        print(f"[gaps] {e}", file=sys.stderr)
+        return 5
+    print(gaps.format_report(report))
+    print(json.dumps(report.get("corpus") or {}, indent=2))
+    return 0
+
+
+def cmd_holdout_status(cfg: dict, a) -> int:
+    from . import holdout
+    print(holdout.format_status(holdout.status(cfg)))
+    return 0
+
+
+def cmd_holdout_rotate(cfg: dict, a) -> int:
+    from . import holdout
+    try:
+        result = holdout.rotate(cfg, count=a.count, seed=a.seed, force=a.force)
+    except holdout.HoldoutError as e:
+        print(f"[holdout] {e}", file=sys.stderr)
+        return 4
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def cmd_dream_report(cfg: dict, a) -> int:
+    from . import dream
+    try:
+        path, result = dream.write_report(cfg, a.run)
+    except FileNotFoundError as e:
+        print(f"[dream] {e}", file=sys.stderr)
+        return 4
+    print(dream.format_table(result))
+    print(f"[dream] report -> {path}")
+    return 0
+
+
 def cmd_final_report(cfg: dict, a) -> int:
     path = final_report.write(cfg)
     print(f"[final-report] wrote {path}")
@@ -550,6 +602,29 @@ def build_parser() -> argparse.ArgumentParser:
     ce = sub.add_parser("composition-eval", help="run the two-skill composition matrix")
     ce.add_argument("--harness", default=None)
     ce.set_defaults(func=cmd_composition_eval)
+
+    gd = sub.add_parser("gaps-detect", help="find failing skill clusters in a measured run")
+    gd.add_argument("--run", default="latest", help="run id/path, or latest")
+    gd.set_defaults(func=cmd_gaps_detect)
+
+    gm = sub.add_parser("gaps-mine", help="mine verified traces for detected gaps")
+    gm.add_argument("--run", default="latest", help="run id/path, or latest")
+    gm.add_argument("--min-rows", type=int, default=1)
+    gm.set_defaults(func=cmd_gaps_mine)
+
+    hs = sub.add_parser("holdout-status", help="report the private holdout state")
+    hs.set_defaults(func=cmd_holdout_status)
+
+    hr = sub.add_parser("holdout-rotate", help="generate and freeze a fresh private holdout")
+    hr.add_argument("--count", type=int, default=10)
+    hr.add_argument("--seed", type=int, default=None)
+    hr.add_argument("--force", action="store_true",
+                    help="archive the current private holdout and replace it")
+    hr.set_defaults(func=cmd_holdout_rotate)
+
+    dr = sub.add_parser("dream-report", help="write reports/dream.md from a replay")
+    dr.add_argument("--run", default=None, help="run id (default: latest dream replay)")
+    dr.set_defaults(func=cmd_dream_report)
 
     db = sub.add_parser("dashboard", help="read-only local ops dashboard")
     db.add_argument("--host", default="127.0.0.1")

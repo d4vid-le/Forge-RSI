@@ -94,7 +94,12 @@ The **Jobs** view queues an explicit chain and stops at a human gate:
 
 - **Skill round** — build corpora → train adapters → gated evaluation →
   **human gate** → promotion decision → reports.
+- **Gap round** — detect failing skill clusters → mine re-verified traces into a
+  raw corpus. Holdouts are excluded.
 - **RSI round** — harness loop → **human gate** → round report → final report.
+- **Dream round** — K-sample dev run → offline policy replay → Dream report.
+- **Rotate holdout** — review the current set → **human gate** → generate,
+  verify, and archive a fresh private holdout.
 - **Reports only** — regenerate the measured reports from disk.
 
 The API accepts only allowlisted parameters; there is no shell and no free-form
@@ -104,7 +109,41 @@ lock first and fail before touching weights on a mismatch; they also refuse to
 start while another Forge training run is active. Rejecting a job leaves the
 adapters on disk but records no promotion.
 
-## 6. RSI harness round
+## 6. Gaps, Dream, and holdout rotation
+
+Gap detection groups measured failures by skill. Mining writes only traces that
+pass the task's hidden tests again; the public and private holdouts are never
+read.
+
+```bash
+python -m forge_rsi gaps-detect --run latest
+python -m forge_rsi gaps-mine --run latest --min-rows 1
+# writes curriculum/01_raw/<stamp>-gap-<run>-raw.jsonl + a manifest
+```
+
+Dream needs a run with more than one candidate per task. Collect them live,
+then replay the policies offline (no model calls in the replay):
+
+```bash
+python -m forge_rsi eval --harness harness/h0_baseline.json \
+  --split skills --run-id dream_k3 --samples 3 --limit 12
+python -m forge_rsi dream --run dream_k3
+python -m forge_rsi dream-report --run dream_k3
+```
+
+Rotate the private holdout when a new blind claim is needed. The old set is
+archived under `tasks/private_holdout_archive/`; prompts and tests stay local
+and only counts/hashes reach `reports/holdout_rotation.md`.
+
+```bash
+python -m forge_rsi holdout-status
+python -m forge_rsi holdout-rotate --count 10 --seed 42 --force
+```
+
+The public 10-task holdout remains a regression set. Do not treat a score on it
+as a blind result.
+
+## 7. RSI harness round
 
 ```bash
 python -m forge_rsi loop --round r1 --iterations 5
@@ -120,7 +159,7 @@ A candidate is kept only if:
 Ties keep the incumbent. The holdout is a regression guard, never an
 optimization signal.
 
-## 7. Reports and telemetry
+## 8. Reports and telemetry
 
 The **Telemetry** view and `reports/` are generated from disk:
 
@@ -132,12 +171,15 @@ python -m forge_rsi final-report
 reports/final.md          combined evidence
 reports/legates.md        skill registry + gated evaluations
 reports/composition.md    two-skill composition matrix
+reports/gaps.md           measured skill gaps + mined corpus
+reports/dream.md          offline selection-policy replay
 reports/private_holdout.md  private holdout + round-2 decision
+reports/holdout_rotation.md  latest rotation (counts/hashes only)
 runs/                     per-run JSON + append-only iteration logs
 adapters/                 candidate adapters (never auto-promoted)
 ```
 
-## 8. Round 2 / private holdout
+## 9. Round 2 / private holdout
 
 ```bash
 python scripts/train_round2.py
@@ -148,7 +190,7 @@ Round 2 is evaluated on a **private holdout** that is not in the public repo.
 The promotion rule is stricter: private-holdout gain, no public dev/probe
 regression, and no forgetting. A tie keeps the incumbent.
 
-## 9. Tests and full reproducibility
+## 10. Tests and full reproducibility
 
 The Forge log parser has deterministic stdlib tests (no model, no network):
 

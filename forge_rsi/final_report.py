@@ -125,6 +125,8 @@ def write(cfg: dict) -> Path:
                   "|---|---|---|---|---|---|---|"]
         for p in dream_files:
             d = json.loads(p.read_text())
+            if "policies" not in d:
+                continue
             for r in d["policies"]:
                 star = " **(winner)**" if r["policy"] == d["winner"] else ""
                 lines.append(
@@ -229,7 +231,8 @@ def write(cfg: dict) -> Path:
     manifests = sorted((Path(cfg["paths"]["curriculum"]) / "01_raw").glob("*.manifest.json"))
     if manifests:
         lines += ["## SkillForge data (Layer 3)", "",
-                  "These are plumbing smoke-test rows, not a capability claim.", "",
+                  "Gap rows are re-verified traces mined from measured runs; the",
+                  "bridge rows are plumbing smoke tests. Neither is a held-out claim.", "",
                   "| file | rows | success | repair | tasks covered | runs |",
                   "|---|---|---|---|---|---|"]
         for p in manifests:
@@ -261,6 +264,26 @@ def write(cfg: dict) -> Path:
                 f"{d['hold_base']:.2f} | {d['hold_adapter']:.2f} | {d['hold_delta']:+.2f} | "
                 f"**{d['promote']}** |"
             )
+        lines.append("")
+
+    # ── skill-gap mining ─────────────────────────────────────────────────
+    gap_files = sorted(runs_dir.glob("gaps_*.json"),
+                       key=lambda x: x.stat().st_mtime, reverse=True)
+    if gap_files:
+        g = json.loads(gap_files[0].read_text())
+        lines += ["## Skill gaps (latest)", "",
+                  f"- source run: `{g.get('run_id')}` · split **{g.get('split')}**",
+                  "- holdouts are excluded from gap mining; every corpus row was re-verified",
+                  "",
+                  "| skill | failed | total | verified rows | missing |",
+                  "|---|---|---|---|---|"]
+        for c in g.get("clusters", []):
+            lines.append(f"| `{c.get('key')}` | {c.get('failed')} | {c.get('total')} | "
+                         f"{c.get('verified_rows', 0)} | {len(c.get('missing') or [])} |")
+        corpus = g.get("corpus")
+        if corpus:
+            lines += ["", f"Corpus: `{Path(corpus.get('file', '')).name}` — "
+                          f"**{corpus.get('rows')}** rows ({corpus.get('verified')} verified)."]
         lines.append("")
 
     # ── honest limitations ───────────────────────────────────────────────

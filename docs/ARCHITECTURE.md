@@ -65,8 +65,10 @@ it. Training is refused if `mlx_lm.lora`, the model, or prepared data is missing
 | `forge_rsi/harness.py` | harness schema / validation / rendering |
 | `forge_rsi/optimizer.py` | teacher proposal + JSON mode |
 | `forge_rsi/legates.py` | skill corpora, router, training, gated eval, results |
+| `forge_rsi/gaps.py` | failing-cluster detection + re-verified corpus mining |
+| `forge_rsi/holdout.py` | private-holdout generation, verification, archive, rotation |
 | `forge_rsi/composition.py` | dual-gate composition experiment |
-| `forge_rsi/dream.py` | offline selection-policy replay |
+| `forge_rsi/dream.py` | offline selection-policy replay + report |
 | `forge_rsi/bridge.py` | traces → SkillForge rows (success + repair) |
 | `forge_rsi/trainer.py` | `mlx_lm.lora` adapter training |
 | `dashboard/status.py` | read-only artifact collector (shared by the Ops tab) |
@@ -90,6 +92,10 @@ raw JSONL ──ingest──▶ records ──clean──▶ rows ──review�
                                                    │
                                                    ▼
                                   promote or quarantine (gate 0)
+
+measured run ──gaps──▶ failing clusters ──mine──▶ re-verified raw corpus
+cached K samples ──dream──▶ selection policy ──▶ reports/dream.md
+private holdout ──rotate──▶ archive old set ──▶ fresh blind set (local-only)
 ```
 
 ## Invariants
@@ -109,3 +115,8 @@ raw JSONL ──ingest──▶ records ──clean──▶ rows ──review�
    there is no shell, no free-form command, and one job runs at a time.
 10. **Human promotion gate.** A measured job stops at `awaiting_approval`; a
     rejection records no promotion and leaves the artifacts on disk.
+11. **Gap mining excludes holdouts.** Only dev, skills, and composition runs are
+    read; every mined row is re-verified with hidden tests before writing.
+12. **Rotation is archival.** The private holdout is copied to
+    `tasks/private_holdout_archive/` before replacement; only counts/hashes are
+    published.

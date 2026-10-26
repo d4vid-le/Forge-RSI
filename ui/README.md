@@ -7,9 +7,12 @@ The React workbench served by the pipeline at `http://127.0.0.1:8010`.
 - **Overview** — base lock, skill registry, gated evaluations, RSI, composition, reports.
 - **Data** — sessions, import, review queue, row detail, accept/reject/edit, export.
 - **Train** — environment, model + base lock, dataset, LoRA config, command preview, live run.
-- **Jobs** — allowlisted chains, step timeline, live log, human approve/reject gate.
-- **Skills** — Le-Gates registry, zero-forgetting checks, composition.
-- **RSI** — proposals, pairwise outcomes, holdout guards, decision.
+- **Jobs** — skill, gap, RSI, Dream, and holdout-rotation chains; step timeline,
+  live log, human approve/reject gate.
+- **Skills** — Le-Gates registry, zero-forgetting checks, private-holdout state,
+  composition.
+- **RSI** — proposals, pairwise outcomes, holdout guards, decision, Dream policy
+  replay, and the latest skill-gap clusters.
 - **Playground** — real local chat, robustness probe, `mlx_lm.server` control.
 - **Telemetry** — runs, evaluation matrix, base lock, generated reports.
 

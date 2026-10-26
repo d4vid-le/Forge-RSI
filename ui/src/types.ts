@@ -55,6 +55,61 @@ export type RsiHoldout = {
   winner_harness?: string;
 };
 
+export type DreamPolicy = {
+  policy: string;
+  passed: number;
+  n: number;
+  score: number;
+  calls: number;
+  tokens_out: number;
+  cost_per_solved?: number | null;
+  value: number;
+};
+
+export type Dream = {
+  run_id: string;
+  harness?: string | null;
+  winner: string;
+  note?: string;
+  policies: DreamPolicy[];
+};
+
+export type GapCluster = {
+  key: string;
+  failed: number;
+  total: number;
+  by_error: Record<string, number>;
+  verified_rows: number;
+  missing: number;
+};
+
+export type Gaps = {
+  run_id: string;
+  split: string;
+  generated_at: string;
+  summary: Summary;
+  clusters: GapCluster[];
+  corpus?: {
+    file: string;
+    rows: number;
+    verified: number;
+    by_kind: Record<string, number>;
+    missing: number;
+  } | null;
+  policy?: string;
+};
+
+export type Holdout = {
+  exists: boolean;
+  count: number;
+  created_at?: string | null;
+  seed?: number | null;
+  combined_sha256?: string | null;
+  archives: number;
+  latest_archive?: string | null;
+  error?: string;
+};
+
 export type OpsStatus = {
   generated_at: string;
   project: string;
@@ -82,6 +137,9 @@ export type OpsStatus = {
     public_probe_delta?: number;
     forgetting_ok?: boolean;
   };
+  dream?: Dream | null;
+  gaps?: Gaps | null;
+  holdout?: Holdout | null;
   reports: { name: string; bytes: number; modified: string }[];
 };
 

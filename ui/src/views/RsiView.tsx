@@ -7,9 +7,10 @@ import {
 } from "../components/ui";
 
 const COMMANDS = `python -m forge_rsi loop --round r2 --iterations 5
-python -m forge_rsi skills-eval --splits dev,holdout,skills --run-id legates_final
-python -m forge_rsi skills-report
-python -m forge_rsi final-report`;
+python -m forge_rsi gaps-detect --run latest
+python -m forge_rsi gaps-mine --run latest
+python -m forge_rsi dream --run <run-id> && python -m forge_rsi dream-report
+python -m forge_rsi holdout-rotate --count 10 --force`;
 
 export function RsiView() {
   const [status, setStatus] = useState<OpsStatus | null>(null);
@@ -40,6 +41,8 @@ export function RsiView() {
   const iterations = status?.rsi?.iterations || [];
   const holdout = status?.rsi?.holdout || [];
   const cfgs = status?.composition?.configs || {};
+  const dream = status?.dream || null;
+  const gaps = status?.gaps || null;
 
   return (
     <ViewShell>
@@ -142,9 +145,80 @@ export function RsiView() {
           } />
           <pre className="mono overflow-auto whitespace-pre-wrap px-4 py-3 text-[11px] leading-relaxed text-muted">{COMMANDS}</pre>
           <div className="border-t border-line px-4 py-3 text-[10.5px] text-dim">
-            The UI is deliberately read-only for long loops; training/eval jobs
-            remain explicit CLI actions until a job queue with base-lock checks ships.
+            Prefer the <span className="text-muted">Jobs</span> view: it runs the same
+            allowlisted chains, streams the child's log, and stops at the human gate.
           </div>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Dream replay"
+            subtitle={dream ? `${dream.run_id} · harness ${dream.harness || "—"}` : "Offline policy search over cached candidates"}
+          />
+          {dream ? (
+            <>
+              <table className="data-table">
+                <thead><tr><th>policy</th><th className="num">score</th><th className="num">passed</th><th className="num">calls</th><th className="num">tokens</th><th className="num">value</th></tr></thead>
+                <tbody>
+                  {dream.policies.map((p) => (
+                    <tr key={p.policy} className={p.policy === dream.winner ? "text-ok" : undefined}>
+                      <td className="mono">{p.policy}{p.policy === dream.winner ? " · winner" : ""}</td>
+                      <td className="num">{fmt(p.score, 2)}</td>
+                      <td className="num">{p.passed}/{p.n}</td>
+                      <td className="num">{p.calls}</td>
+                      <td className="num">{p.tokens_out}</td>
+                      <td className="num">{fmt(p.value, 3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="border-t border-line px-4 py-3 text-[10.5px] text-dim">
+                {dream.note || "Offline replay; no model calls."} The winner is a
+                selection policy, not a new prompt claim.
+              </div>
+            </>
+          ) : (
+            <Empty title="No Dream replay yet" detail="Queue a Dream round from Jobs to collect K candidates and replay the policies offline." />
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Skill gaps"
+            subtitle={gaps ? `${gaps.run_id} · ${gaps.split}` : "Measured failures, grouped by skill"}
+          />
+          {gaps ? (
+            <>
+              <table className="data-table">
+                <thead><tr><th>skill</th><th className="num">failed</th><th className="num">total</th><th>errors</th><th className="num">rows</th><th className="num">missing</th></tr></thead>
+                <tbody>
+                  {gaps.clusters.map((c) => (
+                    <tr key={c.key}>
+                      <td className="mono text-fg">{c.key}</td>
+                      <td className="num text-err">{c.failed}</td>
+                      <td className="num text-muted">{c.total}</td>
+                      <td className="max-w-[180px] truncate text-[10.5px] text-dim" title={JSON.stringify(c.by_error)}>
+                        {Object.entries(c.by_error).map(([k, v]) => `${k} ${v}`).join(", ") || "—"}
+                      </td>
+                      <td className="num text-muted">{c.verified_rows}</td>
+                      <td className="num">{c.missing ? <span className="text-warn">{c.missing}</span> : "0"}</td>
+                    </tr>
+                  ))}
+                  {!gaps.clusters.length && <tr><td colSpan={6}><Empty title="No gap clusters found" /></td></tr>}
+                </tbody>
+              </table>
+              <div className="border-t border-line px-4 py-3 text-[10.5px] text-dim">
+                {gaps.corpus
+                  ? `Corpus: ${gaps.corpus.rows} verified rows (${gaps.corpus.file}). Import and review before training.`
+                  : "No corpus mined yet. Queue a Gap round from Jobs."}
+                {" "}Holdouts are excluded from mining.
+              </div>
+            </>
+          ) : (
+            <Empty title="No gap report yet" detail="Queue a Gap round from Jobs to detect failing clusters and mine verified traces." />
+          )}
         </Card>
       </div>
     </ViewShell>

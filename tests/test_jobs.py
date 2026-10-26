@@ -30,12 +30,43 @@ class BuildStepsTest(unittest.TestCase):
         self.assertTrue(steps[0]["gate"])
         self.assertEqual(steps[0]["name"], "harness loop")
 
+    def test_gap_round_is_detection_then_verified_corpus(self):
+        steps, params = build_steps("gap_round", {"run_id": "latest", "min_rows": 2},
+                                    python="/usr/bin/python3")
+        self.assertEqual([s["name"] for s in steps],
+                         ["detect gaps", "mine verified corpus"])
+        self.assertIn("--min-rows", steps[1]["cmd"])
+        self.assertEqual(params, {"run_id": "latest", "min_rows": 2})
+
+    def test_holdout_rotation_is_gated_before_replacement(self):
+        steps, params = build_steps("holdout_rotate", {"count": 10, "seed": 3},
+                                    python="/usr/bin/python3")
+        self.assertTrue(steps[0]["gate"])
+        self.assertEqual(steps[0]["name"], "current holdout")
+        self.assertIn("holdout-rotate", steps[1]["cmd"])
+        self.assertIn("--force", steps[1]["cmd"])
+        self.assertEqual(params, {"count": 10, "seed": 3})
+
+    def test_dream_round_collects_then_replays(self):
+        steps, params = build_steps("dream_round", {"run_id": "dream_test",
+                                                    "samples": 3},
+                                    python="/usr/bin/python3")
+        self.assertEqual([s["name"] for s in steps],
+                         ["collect candidates", "replay policies", "dream report"])
+        self.assertIn("--samples", steps[0]["cmd"])
+        self.assertIn("harness/h0_baseline.json", steps[0]["cmd"])
+        self.assertEqual(params, {"run_id": "dream_test", "samples": 3})
+
     def test_invalid_inputs_are_rejected(self):
         bad = [
             ("skills_round", {"skills": "../etc", "run_id": "ok"}),
             ("skills_round", {"skills": "word_freq", "run_id": "no spaces"}),
             ("skills_round", {"skills": "word_freq", "run_id": "ok", "rows": 1}),
             ("rsi_round", {"round": "../x"}),
+            ("holdout_rotate", {"seed": -1}),
+            ("holdout_rotate", {"count": 3}),
+            ("dream_round", {"run_id": "bad id"}),
+            ("gap_round", {"run_id": "bad id"}),
             ("nonsense", {}),
         ]
         for kind, params in bad:

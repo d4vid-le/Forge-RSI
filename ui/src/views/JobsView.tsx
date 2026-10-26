@@ -11,7 +11,10 @@ import {
 
 const KINDS: { id: string; label: string; detail: string }[] = [
   { id: "skills_round", label: "Skill round", detail: "corpora → train → gated eval → human gate → reports" },
+  { id: "gap_round", label: "Gap round", detail: "detect failing clusters → mine re-verified traces into a raw corpus" },
   { id: "rsi_round", label: "RSI round", detail: "harness loop → human gate → reports" },
+  { id: "dream_round", label: "Dream round", detail: "K-sample dev run → offline policy replay → dream report" },
+  { id: "holdout_rotate", label: "Rotate holdout", detail: "review current → gate → generate a fresh blind set → archive" },
   { id: "reports", label: "Reports only", detail: "regenerate the measured reports from disk" },
 ];
 
@@ -30,6 +33,15 @@ function summary(job: Job) {
   }
   if (job.kind === "rsi_round") {
     return `round ${job.params.round} · ${job.params.iterations} iterations`;
+  }
+  if (job.kind === "gap_round") {
+    return `${job.params.run_id} · min ${job.params.min_rows} rows`;
+  }
+  if (job.kind === "holdout_rotate") {
+    return `${job.params.count} tasks · seed ${job.params.seed ?? "random"}`;
+  }
+  if (job.kind === "dream_round") {
+    return `${job.params.run_id} · ${job.params.samples} samples`;
   }
   return "skills report + final report";
 }
@@ -51,6 +63,14 @@ export function JobsView() {
   );
   const [round, setRound] = useState("r3");
   const [iterations, setIterations] = useState(3);
+  const [gapRun, setGapRun] = useState("latest");
+  const [minRows, setMinRows] = useState(1);
+  const [holdoutCount, setHoldoutCount] = useState(10);
+  const [holdoutSeed, setHoldoutSeed] = useState("");
+  const [dreamRun, setDreamRun] = useState(
+    () => `dream_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}`,
+  );
+  const [dreamSamples, setDreamSamples] = useState(3);
 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -96,6 +116,12 @@ export function JobsView() {
     const params: Record<string, unknown> = {};
     if (kind === "skills_round") Object.assign(params, { skills, rows, iters, run_id: runId });
     if (kind === "rsi_round") Object.assign(params, { round, iterations });
+    if (kind === "gap_round") Object.assign(params, { run_id: gapRun, min_rows: minRows });
+    if (kind === "holdout_rotate") {
+      Object.assign(params, { count: holdoutCount });
+      if (holdoutSeed.trim()) params.seed = Number(holdoutSeed);
+    }
+    if (kind === "dream_round") Object.assign(params, { run_id: dreamRun, samples: dreamSamples });
     try {
       const d = await api.post<{ job: Job }>("/api/jobs", { kind, params });
       setNotice(`queued ${d.job.id}`);
@@ -197,12 +223,57 @@ export function JobsView() {
                 </div>
               )}
 
+              {kind === "gap_round" && (
+                <>
+                  <Field label="measured run" hint="a dev, skills, or composition run">
+                    <Input value={gapRun} onChange={(e) => setGapRun(e.target.value)} />
+                  </Field>
+                  <Field label="minimum verified rows" hint="fail if fewer rows are mined">
+                    <Input type="number" value={minRows} onChange={(e) => setMinRows(Number(e.target.value))} />
+                  </Field>
+                </>
+              )}
+
+              {kind === "dream_round" && (
+                <>
+                  <Field label="run id" hint="new dev run for the replay">
+                    <Input value={dreamRun} onChange={(e) => setDreamRun(e.target.value)} />
+                  </Field>
+                  <Field label="candidates per task" hint="1-5; the live generation step">
+                    <Input type="number" value={dreamSamples} onChange={(e) => setDreamSamples(Number(e.target.value))} />
+                  </Field>
+                </>
+              )}
+
+              {kind === "holdout_rotate" && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="tasks">
+                      <Input type="number" value={holdoutCount} onChange={(e) => setHoldoutCount(Number(e.target.value))} />
+                    </Field>
+                    <Field label="seed" hint="blank = random">
+                      <Input value={holdoutSeed} onChange={(e) => setHoldoutSeed(e.target.value)} placeholder="random" />
+                    </Field>
+                  </div>
+                  <div className="rounded-lg border border-warn/35 bg-warn/10 px-2.5 py-2 text-[10.5px] text-warn">
+                    The current private set is archived, not deleted. Approval is required
+                    before the new set replaces it.
+                  </div>
+                </>
+              )}
+
               <Button variant="primary" className="w-full" onClick={submit} disabled={busy === "submit"}>
                 {busy === "submit" ? "Queuing…" : "Queue job"}
               </Button>
               <div className="flex items-start gap-1.5 text-[10px] leading-relaxed text-dim">
                 <ShieldCheck size={12} className="mt-0.5 shrink-0 text-ok" />
-                Training steps check the base lock first. A mismatch fails the job before any weights are touched.
+                {kind === "holdout_rotate"
+                  ? "The current set is archived. Nothing is replaced until you approve the gate."
+                  : kind === "dream_round"
+                    ? "Candidate collection is live; the policy replay itself makes no model calls."
+                    : kind === "gap_round"
+                      ? "Holdouts are excluded and every mined row is re-verified before it is written."
+                      : "Training steps check the base lock first. A mismatch fails the job before any weights are touched."}
               </div>
             </div>
           </Card>
