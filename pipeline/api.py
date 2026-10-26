@@ -25,6 +25,7 @@ Endpoints
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import re
 import tempfile
@@ -43,7 +44,8 @@ from .store import Store
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = os.environ.get("SKILLFORGE_DB", str(REPO_ROOT / "data" / "skillforge.db"))
-UI_FILE = Path(__file__).resolve().parent / "ui" / "index.html"
+CLASSIC_UI = Path(__file__).resolve().parent / "ui" / "index.html"
+UI_DIST = REPO_ROOT / "ui" / "dist"
 MAX_BODY = 512 * 1024 * 1024          # upload guard: larger data should be imported by path
 
 SESSION_RE = re.compile(r"^[A-Za-z0-9_\-]+$")
@@ -115,6 +117,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if u.path in ("/", "/index.html", "/ui"):
                 return self._ui()
+            if u.path == "/classic":
+                return self._classic_ui()
+            if u.path.startswith("/assets/"):
+                return self._asset(u.path)
             if u.path == "/api/health":
                 return self._send({"ok": True, "db": self.server.db_path,
                                    "time": datetime.now().isoformat(timespec="seconds")})
@@ -193,9 +199,27 @@ class Handler(BaseHTTPRequestHandler):
 
     # ── handlers ────────────────────────────────────────────────────────────
     def _ui(self):
-        if not UI_FILE.exists():
-            return self._err("review UI not found", 404)
-        self._send(UI_FILE.read_bytes(), ctype="text/html; charset=utf-8")
+        """Serve the built React product, falling back to the classic page."""
+        target = UI_DIST / "index.html"
+        if not target.exists():
+            target = CLASSIC_UI
+        if not target.exists():
+            return self._err("review UI not found — run `npm --prefix ui run build`", 404)
+        self._send(target.read_bytes(), ctype="text/html; charset=utf-8")
+
+    def _classic_ui(self):
+        if not CLASSIC_UI.exists():
+            return self._err("classic UI not found", 404)
+        self._send(CLASSIC_UI.read_bytes(), ctype="text/html; charset=utf-8")
+
+    def _asset(self, path: str):
+        rel = path.lstrip("/")
+        target = (UI_DIST / rel).resolve()
+        root = UI_DIST.resolve()
+        if root not in target.parents or not target.is_file():
+            return self._err("not found", 404)
+        ctype = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+        self._send(target.read_bytes(), ctype=ctype)
 
     def _ops_report(self, name: str):
         if not re.fullmatch(r"[A-Za-z0-9_.-]+\.md", name or ""):

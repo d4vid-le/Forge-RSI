@@ -6,8 +6,7 @@ adapters/
 runs/
 exports/
 data/
-rsi_smoke/
-training-curriculum/telemetry/
+legacy/
 curriculum/01_raw/*
 curriculum/02_curated/*
 curriculum/03_ready-for-training/*
@@ -24,5 +23,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .DS_Store
-workspace/node_modules/
-workspace/dist/
+
+# UI: keep the prebuilt product (ui/dist) for users who do not run Node.
+ui/node_modules/
+ui/.vite/

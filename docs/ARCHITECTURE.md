@@ -1,93 +1,104 @@
 # Architecture
 
-Three layers, one frozen base.
-
 ```
-Layer 1  live RSI       MiMo 9B runs frozen coding tasks; a 35B teacher
-                        rewrites the harness; wins are kept, regressions revert
-Layer 2  Dream replay   cached K-sample candidates are re-ranked offline under
-                        different selection policies (zero model calls)
-Layer 3  SkillForge     passing traces + repairs -> curated SFT data -> LoRA
-                        adapter -> dev/holdout re-measure -> promote/quarantine
-Layer 4  Le-Gates       per-skill LoRA adapters on the frozen base, selected by
-                        a hard 0/1 router with Σ gate ≤ 1
-```
-
-## Layer 1 — harness search
-
-The harness is a JSON document:
-
-```json
-{
-  "version": "h0",
-  "role": "...",
-  "contract": {"output": "...", "must": [], "must_not": []},
-  "hops": [{"name": "implement", "instruction": "..."}],
-  "tools": [],
-  "selection": {"policy": "first", "k": 1},
-  "budget": {"max_turns": 1, "max_output_tokens": 900}
-}
+┌─────────────────────────────────────────────────────────────────────┐
+│  ui/ — React + Vite + Tailwind workbench                            │
+│  Overview · Data · Train · Skills · RSI · Playground · Telemetry    │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ same-origin /api
+┌───────────────────────────────▼─────────────────────────────────────┐
+│  pipeline/api.py — local HTTP API + static product build           │
+│  sessions · rows · import/export · forge · playground · ops        │
+└───────┬──────────────────┬──────────────────┬───────────────────────┘
+        │                  │                  │
+┌───────▼──────┐   ┌───────▼──────┐   ┌───────▼──────────┐
+│ pipeline/    │   │ forge_rsi/   │   │ dashboard/       │
+│ curation,    │   │ RSI, Le-Gates│   │ read-only Ops    │
+│ forge, play  │   │ Dream, bridge│   │ collector        │
+└───────┬──────┘   └───────┬──────┘   └───────┬──────────┘
+        │                  │                  │
+        └──────────────────┴──────────────────┘
+                           │
+              tasks/ · harness/ · reports/ · runs/ · adapters/
 ```
 
-It is the only object the loop may mutate. A candidate is accepted only if:
+## UI layer
 
-- `wins > losses` on the same dev tasks,
-- score is not more than `0.05` below the incumbent,
-- cost per solved task is at most `1.5×` the incumbent,
-- the anti-leak validator passes.
+- One shell: left rail (Workbench / Intelligence / Observability), compact top
+  bar, full-height work area.
+- Views fetch real APIs and render explicit loading/error/empty states.
+- No mock fallback. If a server or model is missing, the panel says so.
+- The prebuilt build is in `ui/dist`; `pipeline/api.py` serves it at `/`.
+  The classic single-file UI is still at `/classic`.
 
-Ties keep the incumbent. The holdout is evaluated once per round as a regression
-guard, never used to choose a harness.
+## API layer
 
-## Layer 2 — Dream replay
+`pipeline/api.py` is a stdlib `ThreadingHTTPServer` with:
 
-Selection policies (`first`, `longest`, `majority`, `test_gated`,
-`best_of_k_oracle`) re-rank candidates that were already generated. No model
-calls. `best_of_k_oracle` is an upper bound and is never deployed.
+- Data: `/api/sessions`, `/api/session`, `/api/rows`, `/api/decide`,
+  `/api/bulk`, `/api/edit`, `/api/import`, `/api/export`, `/api/quarantine`.
+- Forge: `/api/forge/status`, `/api/forge/base-lock`, `/api/forge/prepare`,
+  `/api/forge/train`, `/api/forge/stop`, `/api/forge/run`.
+- Playground: `/api/playground/status`, `/api/playground/chat`,
+  `/api/playground/probe`, `/api/playground/server/*`.
+- Ops: `/api/ops/status`, `/api/ops/report`.
+- Static: `/`, `/assets/*` from `ui/dist`, `/classic` for the old page.
 
-## Layer 3 — SkillForge
+The API binds to `127.0.0.1` by default. It has no authentication; do not expose
+it. Training is refused if `mlx_lm.lora`, the model, or prepared data is missing.
 
-Passing traces and failure→fix pairs become messages-format SFT rows. The data
-pipeline enforces hard gates (secrets, host paths, invalid tool JSON, orphan
-observations, size). Training is real `mlx_lm.lora`; the base is frozen.
+## Engine modules
 
-## Layer 4 — Le-Gates
+| module | owns |
+|---|---|
+| `pipeline/ingest.py` | load JSON/JSONL/OpenAI/chatml shapes, provenance |
+| `pipeline/clean.py` | dedupe, normalize, tool-call repair, secret/host-path flags |
+| `pipeline/store.py` | SQLite sessions, rows, decisions, quarantine |
+| `pipeline/export.py` | hard gates, manifest, rejected bundle |
+| `pipeline/forge.py` | dataset prep, `mlx_lm.lora` wrapper, run telemetry |
+| `pipeline/playground.py` | endpoint discovery, real chat, robustness probe, server control |
+| `forge_rsi/agent.py` | MLX generation, code extraction, tool feedback |
+| `forge_rsi/verifier.py` | deterministic temp-dir unittest runner |
+| `forge_rsi/harness.py` | harness schema / validation / rendering |
+| `forge_rsi/optimizer.py` | teacher proposal + JSON mode |
+| `forge_rsi/legates.py` | skill corpora, router, training, gated eval, results |
+| `forge_rsi/composition.py` | dual-gate composition experiment |
+| `forge_rsi/dream.py` | offline selection-policy replay |
+| `forge_rsi/bridge.py` | traces → SkillForge rows (success + repair) |
+| `forge_rsi/trainer.py` | `mlx_lm.lora` adapter training |
+| `dashboard/status.py` | read-only artifact collector (shared by the Ops tab) |
+
+## Data flow
 
 ```
-y = base(x) + gate_k * scale_k * (x @ A_k) @ B_k
-gate_k in {0,1},  Σ gate_k <= 1
+raw JSONL ──ingest──▶ records ──clean──▶ rows ──review──▶ decisions
+                                                   │
+                                                   ▼
+                                          export (hard gates)
+                                                   │
+                                                   ▼
+                                       train/valid JSONL
+                                                   │
+                                                   ▼
+                                          mlx_lm.lora adapter
+                                                   │
+                                                   ▼
+                                  gated dev / holdout / probes
+                                                   │
+                                                   ▼
+                                  promote or quarantine (gate 0)
 ```
 
-One rank-8 adapter per skill, trained fresh from the base on a pure corpus
-(`num_layers=6`, `scale=2.0`, `lr=1e-4`, masked loss). A deterministic keyword
-router opens at most one gate. Non-routed tasks are copied verbatim from the
-base run, so their outputs are identical by construction.
+## Invariants
 
-A skill is promoted only if it gains on dev **and** on held-out skill probes,
-with no non-routed change and no holdout regression. Otherwise it is quarantined
-(gated to 0), never deleted.
-
-## Why the base checksum matters
-
-`mlx_lm.lora` writes only adapter files. The base model directory is hashed
-before and after training. A mismatch fails the run. This is the R1 rule from
-the Le-Gates protocol and the reason the forgetting claim is structural rather
-than statistical.
-
-## Legacy UI snapshot
-
-`workspace.tar` is the earlier frontend prototype. Its `backend/train_lora.py`
-contains **simulated** training loops and mock inference; do not use it for
-training or evaluation claims. The real path is:
-
-- `forge_rsi/trainer.py` — `mlx_lm.lora` wrapper used by the skill adapters.
-- `pipeline/forge.py` — the SkillForge Forge stage, also real `mlx_lm.lora`.
-
-## What is not claimed
-
-- Composition of two full-scale skills. `Σ≤1` is enforced as a magnitude
-  constraint; `docs/PAPER.md` reports the composition failure measured on the
-  0.5B rig.
-- A learned router. The deployed router is deterministic keyword matching;
-  oracle routing is an upper bound.
-- General intelligence or cross-model transfer.
+1. **Base lock.** The base is checksum-verified before/after training and never
+   written by the trainer.
+2. **Hard data gates.** No secrets, host paths, invalid tool JSON, orphan
+   observations, or oversize rows reach training.
+3. **Σ gate ≤ 1.** At most one skill adapter is active per task.
+4. **Zero forgetting by construction.** Non-routed tasks use the base run
+   verbatim.
+5. **Holdout is a guard.** It is not used to choose a harness or adapter.
+6. **Ties keep the incumbent.** A candidate must win.
+7. **Quarantine, don't delete.** A failed adapter is gated to 0 and retained.
+8. **No invented numbers.** Every displayed metric is read from a run artifact.
