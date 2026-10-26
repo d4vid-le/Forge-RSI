@@ -1,7 +1,7 @@
 """Forge-RSI command line.
 
-Run with the MLX environment:
-    /Users/dblab/mlx-env/bin/python -m forge_rsi <command> ...
+Run with an environment that has MLX installed:
+    python -m forge_rsi <command> ...
 """
 from __future__ import annotations
 
