@@ -1,0 +1,14 @@
+{
+  "id": "comp_04",
+  "title": "word_freq + merge_intervals",
+  "prompt": "Write two functions in one fenced ```python block:\n1. `word_freq(text: str) -> dict` returning a dict mapping each lowercased whitespace-separated word to its count.\n2. `merge_intervals(intervals: list) -> list` merging overlapping or touching closed [start, end] intervals and returning a sorted list.\nInclude both functions. No prose outside the block.",
+  "tests": "import unittest\nfrom solution import word_freq, merge_intervals\n\nclass T(unittest.TestCase):\n    def test_word_basic(self):\n        self.assertEqual(word_freq('x y z x'), {'x': 2, 'y': 1, 'z': 1})\n    def test_word_case(self):\n        self.assertEqual(word_freq(\"Hi hi HI\"), {\"hi\": 3})\n    def test_merge_overlap(self):\n        self.assertEqual(merge_intervals([[1, 10], [2, 3]]), [[1, 10]])\n    def test_merge_touch(self):\n        self.assertEqual(merge_intervals([[1, 3], [3, 5]]), [[1, 5]])",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "composition",
+    "word_freq",
+    "merge_intervals"
+  ],
+  "difficulty": "hard"
+}

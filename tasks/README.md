@@ -6,7 +6,8 @@ The benchmark is synthetic Python coding tasks with hidden `unittest` tests.
 |---|---|---|
 | `dev` | 20 | harness and adapter development |
 | `holdout` | 10 | public regression guard |
-| `skills` | 12 | held-out skill probes (not in any adapter corpus) |
+| `skills` | 24 | held-out skill probes (not in any adapter corpus) |
+| `composition` | 5 | two-skill compound tasks (`word_freq` + `merge_intervals`) |
 
 Each task JSON contains the prompt, the hidden tests, the entry filename, a
 timeout, and tags. Reference solutions live in `build_tasks.py` and are proven
@@ -25,7 +26,9 @@ hashes, and do not inspect it before the final run.
 
 ## Skill probes
 
-`tasks/skills/` contains 12 probes across two skills (`word_freq`,
-`merge_intervals`) with function names that are **not** in the training corpora
-(`token_frequency`, `merge_intervals_sorted`, `merge_closed_intervals`,
-`range_merger`). They are the generalization check for the Le-Gates adapters.
+`tasks/skills/` contains 24 probes across two skills (`word_freq`,
+`merge_intervals`; 12 each) with function names and test cases that are **not**
+in the training corpora. They are the generalization check for the Le-Gates
+adapters. The original 12-probe subset is 12/12; the expanded 24-probe set is
+23/24. The one failure is a function-name drift (`combine_intervals` emitted for
+a `merge_overlapping` prompt), which is a real generalization failure.

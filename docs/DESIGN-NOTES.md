@@ -38,17 +38,20 @@ loop doing its job: a plausible prompt idea is not automatically an improvement.
 
 Two rank-8 adapters were trained from the frozen base on pure synthetic corpora:
 
-| skill | dev gain | held-out probe gain |
+| skill | dev gain | 24-probe gain |
 |---|---|---|
-| `word_freq` | +1 | +4 |
+| `word_freq` | +1 | +11 |
 | `merge_intervals` | +1 | +3 |
 
-Gated stack: dev **18/20 → 20/20**, probes **5/12 → 12/12**, holdout **8/10 →
-8/10**, base checksum unchanged, non-routed outputs identical.
+Gated stack: dev **18/20 → 20/20**, expanded probes **9/24 → 23/24**, holdout
+**8/10 → 8/10**, base checksum unchanged, non-routed outputs identical. The
+original 12-probe subset is 12/12.
 
-The probes include function names that were **not** in the training corpus
-(`token_frequency`, `merge_intervals_sorted`, `merge_closed_intervals`,
-`range_merger`), so this is transfer, not only prompt memorization.
+The expanded probes use function names and test cases that were **not** in the
+training corpus. The one expanded-probe failure is a function-name drift: the
+adapter emitted `combine_intervals` when the task asked for `merge_overlapping`.
+That is a real generalization failure, and it is exactly why the probe set was
+expanded.
 
 ## 5. The teacher needed a diversity rule
 
@@ -73,7 +76,40 @@ That is why the holdout score does not move: no holdout task matched a skill
 trigger, so the gated stack *is* the base stack on those tasks. A future round
 with a different router must re-prove that, not assume it.
 
-## 7. What is still open
+## 7. Composition is a generation gap
+
+Five compound tasks require both `word_freq` and `merge_intervals` in one
+solution. The parts are 3 word probes and 3 merge probes.
+
+| config | parts word | parts merge | whole |
+|---|---|---|---|
+| base | 0/3 | 2/3 | 0/5 |
+| word gate | 3/3 | 1/3 | 1/5 |
+| merge gate | 0/3 | 3/3 | 0/5 |
+| dual full (Σ=2) | 3/3 | 3/3 | 0/5 |
+| dual half (Σ=1) | 3/3 | 3/3 | 0/5 |
+
+The single gates pass their own parts and fail the whole. Both dual adapters
+preserve both parts, so two deltas coexist without interference when the task
+asks for one skill. But neither dual adapter solves the whole: the model does
+not emit both functions in one response. That is a composition failure at
+generation time, not the paper's Σ=2 weight-magnitude collapse. The deployed
+router stays at Σ≤1 and claims no composition.
+
+## 8. Round 2 on a private holdout
+
+Ten tasks were withheld from the public repository: 4 word-frequency variants,
+4 interval variants, 2 unrelated controls. Round 1 and round 2 both went from
+**5/10 base to 10/10 gated**; the private delta was **0**. Public dev and the
+24-probe set also tied (20/20 and 23/24), and the zero-forgetting checks held.
+
+The promotion rule kept round 1. A tie is not a promotion; the extra 20 rows
+and 40 iterations did not buy a blind gain. The `merge_overlapping`
+name-collision in the 24-probe set persisted in both rounds, so more of the
+same corpus did not fix it. That is the next corpus-design problem, not a
+reason to promote.
+
+## 9. What is still open
 
 - A private holdout. The 10 holdout tasks are public in this repository, so a
   future blind claim needs a fresh, frozen holdout.
@@ -82,5 +118,6 @@ with a different router must re-prove that, not assume it.
   composition.
 - A learned router. The deployed router is deterministic keyword matching;
   oracle routing is an upper bound.
-- More skills and a larger probe set. Two skills and 12 probes are enough to
-  demonstrate the mechanism, not to estimate a general skill-acquisition rate.
+- More skills and a larger probe set. Two skills and 24 probes are enough to
+  demonstrate the mechanism and expose a name-generalization failure, not to
+  estimate a general skill-acquisition rate.

@@ -25,6 +25,16 @@ composed with two deltas. Non-routed tasks run on the untouched base.
 | `rle` | — | — | — | — | — | — |
 | `second_largest` | — | — | — | — | — | — |
 
+## Round 2 adapters
+
+| skill | rows | iters | train loss | val loss | base unchanged |
+|---|---|---|---|---|---|
+| `word_freq` | — | 160 | 0.032 | 0.029 | True |
+| `merge_intervals` | — | 160 | 0.018 | 0.052 | True |
+
+Round 2 decision: **False** — private holdout tie; keep round 1
+
+
 ## Lifecycle decisions
 
 | skill | status | dev gain | probe gain | non-routed identical | reason |
@@ -141,6 +151,137 @@ zero-forgetting evidence, not a claim of holdout skill transfer.
 | `probe_wf_4` | `word_freq` | False | True | +1 |
 | `probe_wf_5` | `word_freq` | False | True | +1 |
 | `probe_wf_6` | `word_freq` | True | True | +0 |
+
+
+## Gated evaluation — `private_holdout` (run `private_r1_private_holdout_gated`, keyword router)
+
+- base: **5/10** (0.50)
+- gated: **10/10** (1.00)
+- delta: **+0.50**
+- routed tasks: priv_mi_1, priv_mi_2, priv_mi_3, priv_mi_4, priv_wf_1, priv_wf_2, priv_wf_3, priv_wf_4
+- non-routed tasks byte-identical: **True**
+- base checksum match: **True**
+
+| task | skill | base | gated | delta |
+|---|---|---|---|---|
+| `priv_mi_1` | `merge_intervals` | True | True | +0 |
+| `priv_mi_2` | `merge_intervals` | False | True | +1 |
+| `priv_mi_3` | `merge_intervals` | True | True | +0 |
+| `priv_mi_4` | `merge_intervals` | True | True | +0 |
+| `priv_wf_1` | `word_freq` | False | True | +1 |
+| `priv_wf_2` | `word_freq` | False | True | +1 |
+| `priv_wf_3` | `word_freq` | False | True | +1 |
+| `priv_wf_4` | `word_freq` | False | True | +1 |
+
+
+## Gated evaluation — `private_holdout` (run `private_r2_private_holdout_gated`, keyword router)
+
+- base: **5/10** (0.50)
+- gated: **10/10** (1.00)
+- delta: **+0.50**
+- routed tasks: priv_mi_1, priv_mi_2, priv_mi_3, priv_mi_4, priv_wf_1, priv_wf_2, priv_wf_3, priv_wf_4
+- non-routed tasks byte-identical: **True**
+- base checksum match: **True**
+
+| task | skill | base | gated | delta |
+|---|---|---|---|---|
+| `priv_mi_1` | `merge_intervals` | True | True | +0 |
+| `priv_mi_2` | `merge_intervals` | False | True | +1 |
+| `priv_mi_3` | `merge_intervals` | True | True | +0 |
+| `priv_mi_4` | `merge_intervals` | True | True | +0 |
+| `priv_wf_1` | `word_freq` | False | True | +1 |
+| `priv_wf_2` | `word_freq` | False | True | +1 |
+| `priv_wf_3` | `word_freq` | False | True | +1 |
+| `priv_wf_4` | `word_freq` | False | True | +1 |
+
+
+## Gated evaluation — `dev` (run `r2_public_dev_gated`, keyword router)
+
+- base: **18/20** (0.90)
+- gated: **20/20** (1.00)
+- delta: **+0.10**
+- routed tasks: dev_012, dev_020
+- non-routed tasks byte-identical: **True**
+- base checksum match: **True**
+
+| task | skill | base | gated | delta |
+|---|---|---|---|---|
+| `dev_020` | `merge_intervals` | False | True | +1 |
+| `dev_012` | `word_freq` | False | True | +1 |
+
+
+## Gated evaluation — `skills` (run `r2_public_skills_gated`, keyword router)
+
+- base: **9/24** (0.38)
+- gated: **23/24** (0.96)
+- delta: **+0.58**
+- routed tasks: probe_mi_1, probe_mi_10, probe_mi_11, probe_mi_12, probe_mi_2, probe_mi_3, probe_mi_4, probe_mi_5, probe_mi_6, probe_mi_7, probe_mi_8, probe_mi_9, probe_wf_1, probe_wf_10, probe_wf_11, probe_wf_12, probe_wf_2, probe_wf_3, probe_wf_4, probe_wf_5, probe_wf_6, probe_wf_7, probe_wf_8, probe_wf_9
+- non-routed tasks byte-identical: **True**
+- base checksum match: **True**
+
+| task | skill | base | gated | delta |
+|---|---|---|---|---|
+| `probe_mi_1` | `merge_intervals` | True | True | +0 |
+| `probe_mi_10` | `merge_intervals` | False | True | +1 |
+| `probe_mi_11` | `merge_intervals` | True | True | +0 |
+| `probe_mi_12` | `merge_intervals` | False | True | +1 |
+| `probe_mi_2` | `merge_intervals` | False | False | +0 |
+| `probe_mi_3` | `merge_intervals` | False | True | +1 |
+| `probe_mi_4` | `merge_intervals` | True | True | +0 |
+| `probe_mi_5` | `merge_intervals` | True | True | +0 |
+| `probe_mi_6` | `merge_intervals` | True | True | +0 |
+| `probe_mi_7` | `merge_intervals` | True | True | +0 |
+| `probe_mi_8` | `merge_intervals` | True | True | +0 |
+| `probe_mi_9` | `merge_intervals` | True | True | +0 |
+| `probe_wf_1` | `word_freq` | False | True | +1 |
+| `probe_wf_10` | `word_freq` | False | True | +1 |
+| `probe_wf_11` | `word_freq` | False | True | +1 |
+| `probe_wf_12` | `word_freq` | False | True | +1 |
+| `probe_wf_2` | `word_freq` | False | True | +1 |
+| `probe_wf_3` | `word_freq` | True | True | +0 |
+| `probe_wf_4` | `word_freq` | False | True | +1 |
+| `probe_wf_5` | `word_freq` | False | True | +1 |
+| `probe_wf_6` | `word_freq` | False | True | +1 |
+| `probe_wf_7` | `word_freq` | False | True | +1 |
+| `probe_wf_8` | `word_freq` | False | True | +1 |
+| `probe_wf_9` | `word_freq` | False | True | +1 |
+
+
+## Gated evaluation — `skills` (run `skills24_r1_skills_gated`, keyword router)
+
+- base: **9/24** (0.38)
+- gated: **23/24** (0.96)
+- delta: **+0.58**
+- routed tasks: probe_mi_1, probe_mi_10, probe_mi_11, probe_mi_12, probe_mi_2, probe_mi_3, probe_mi_4, probe_mi_5, probe_mi_6, probe_mi_7, probe_mi_8, probe_mi_9, probe_wf_1, probe_wf_10, probe_wf_11, probe_wf_12, probe_wf_2, probe_wf_3, probe_wf_4, probe_wf_5, probe_wf_6, probe_wf_7, probe_wf_8, probe_wf_9
+- non-routed tasks byte-identical: **True**
+- base checksum match: **True**
+
+| task | skill | base | gated | delta |
+|---|---|---|---|---|
+| `probe_mi_1` | `merge_intervals` | True | True | +0 |
+| `probe_mi_10` | `merge_intervals` | False | True | +1 |
+| `probe_mi_11` | `merge_intervals` | True | True | +0 |
+| `probe_mi_12` | `merge_intervals` | False | True | +1 |
+| `probe_mi_2` | `merge_intervals` | False | False | +0 |
+| `probe_mi_3` | `merge_intervals` | False | True | +1 |
+| `probe_mi_4` | `merge_intervals` | True | True | +0 |
+| `probe_mi_5` | `merge_intervals` | True | True | +0 |
+| `probe_mi_6` | `merge_intervals` | True | True | +0 |
+| `probe_mi_7` | `merge_intervals` | True | True | +0 |
+| `probe_mi_8` | `merge_intervals` | True | True | +0 |
+| `probe_mi_9` | `merge_intervals` | True | True | +0 |
+| `probe_wf_1` | `word_freq` | False | True | +1 |
+| `probe_wf_10` | `word_freq` | False | True | +1 |
+| `probe_wf_11` | `word_freq` | False | True | +1 |
+| `probe_wf_12` | `word_freq` | False | True | +1 |
+| `probe_wf_2` | `word_freq` | False | True | +1 |
+| `probe_wf_3` | `word_freq` | True | True | +0 |
+| `probe_wf_4` | `word_freq` | False | True | +1 |
+| `probe_wf_5` | `word_freq` | False | True | +1 |
+| `probe_wf_6` | `word_freq` | False | True | +1 |
+| `probe_wf_7` | `word_freq` | False | True | +1 |
+| `probe_wf_8` | `word_freq` | False | True | +1 |
+| `probe_wf_9` | `word_freq` | False | True | +1 |
 
 ## What this proves
 

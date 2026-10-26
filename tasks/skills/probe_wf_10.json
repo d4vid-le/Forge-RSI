@@ -1,0 +1,13 @@
+{
+  "id": "probe_wf_10",
+  "title": "freq_table",
+  "prompt": "Build a frequency table. `freq_table(text)` returns a dict mapping lowercased words to counts.",
+  "tests": "import unittest\nfrom solution import freq_table\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(freq_table(\"a b a\"), {\"a\": 2, \"b\": 1})\n    def test_case(self):\n        self.assertEqual(freq_table(\"Hi hi HI\"), {\"hi\": 3})\n    def test_empty(self):\n        self.assertEqual(freq_table(\"\"), {})\n    def test_whitespace(self):\n        self.assertEqual(freq_table(\"a  b\\ta\\nb\"), {\"a\": 2, \"b\": 2})\n    def test_single(self):\n        self.assertEqual(freq_table(\"solo\"), {\"solo\": 1})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "skill_probe",
+    "word_freq"
+  ],
+  "difficulty": "medium"
+}

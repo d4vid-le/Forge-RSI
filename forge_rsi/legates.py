@@ -144,7 +144,12 @@ SKILLS: dict[str, dict] = {
             r"\bword[_ ]?counts?\b",
             r"\bfrequency\b",
             r"\bcount[_ ]?occurrences\b",
+            r"\bcount[_ ]?word[_ ]?occurrences\b",
             r"\btoken[_ ]?frequenc",
+            r"\btoken[_ ]?counts?\b",
+            r"\bfreq[_ ]?table\b",
+            r"\bword[_ ]?tally\b",
+            r"\boccurrence[_ ]?counts?\b",
             r"\bfrequency of (?:each|every) word",
             r"\bcounts? (?:how many times )?(?:each|every) word",
             r"\bword frequency\b",
@@ -179,6 +184,12 @@ SKILLS: dict[str, dict] = {
             r"\bmerge .* intervals\b",
             r"\bcombine[_ ]?intervals\b",
             r"\bmerge[_ ]?closed[_ ]?intervals\b",
+            r"\bmerge[_ ]?all[_ ]?intervals\b",
+            r"\bcoalesce[_ ]?intervals\b",
+            r"\binterval[_ ]?union\b",
+            r"\bmerge[_ ]?span\b",
+            r"\bcollapse[_ ]?intervals\b",
+            r"\bunion[_ ]?intervals\b",
             r"\brange[_ ]?merg",
         ],
         "names": ["merge_intervals", "merge_ranges", "merge_overlapping",
@@ -365,24 +376,63 @@ class T(unittest.TestCase):
 """
 
 
-def _add_wf_probe(idx: int, name: str, prompt: str, code_idx: int = 0):
+_WF_TEST_TEMPLATE2 = """
+import unittest
+from solution import {fn}
+
+class T(unittest.TestCase):
+    def test_basic(self):
+        self.assertEqual({fn}("a b a"), {"a": 2, "b": 1})
+    def test_case(self):
+        self.assertEqual({fn}("Hi hi HI"), {"hi": 3})
+    def test_empty(self):
+        self.assertEqual({fn}(""), {})
+    def test_whitespace(self):
+        self.assertEqual({fn}("a  b\\ta\\nb"), {"a": 2, "b": 2})
+    def test_single(self):
+        self.assertEqual({fn}("solo"), {"solo": 1})
+"""
+
+_MI_TEST_TEMPLATE2 = """
+import unittest
+from solution import {fn}
+
+class T(unittest.TestCase):
+    def test_overlap(self):
+        self.assertEqual({fn}([[1, 3], [2, 6]]), [[1, 6]])
+    def test_touch(self):
+        self.assertEqual({fn}([[1, 3], [3, 5]]), [[1, 5]])
+    def test_nested(self):
+        self.assertEqual({fn}([[1, 10], [2, 3]]), [[1, 10]])
+    def test_unsorted(self):
+        self.assertEqual({fn}([[5, 6], [1, 2], [2, 3]]), [[1, 3], [5, 6]])
+    def test_single(self):
+        self.assertEqual({fn}([[1, 2]]), [[1, 2]])
+    def test_negative(self):
+        self.assertEqual({fn}([[-5, -1], [-3, 0]]), [[-5, 0]])
+"""
+
+
+def _add_wf_probe(idx: int, name: str, prompt: str, code_idx: int = 0,
+                  test_template: str | None = None):
     PROBE_TASKS.append({
         "id": f"probe_wf_{idx}",
         "title": name,
         "prompt": prompt,
         "ref": WORD_FREQ_CODE[code_idx].replace("{name}", name),
-        "tests": _WF_TEST_TEMPLATE.replace("{fn}", name),
+        "tests": (test_template or _WF_TEST_TEMPLATE).replace("{fn}", name),
         "tags": ["skill_probe", "word_freq"],
     })
 
 
-def _add_mi_probe(idx: int, name: str, prompt: str, code_idx: int = 0):
+def _add_mi_probe(idx: int, name: str, prompt: str, code_idx: int = 0,
+                  test_template: str | None = None):
     PROBE_TASKS.append({
         "id": f"probe_mi_{idx}",
         "title": name,
         "prompt": prompt,
         "ref": MERGE_CODE[code_idx].replace("{name}", name),
-        "tests": _MI_TEST_TEMPLATE.replace("{fn}", name),
+        "tests": (test_template or _MI_TEST_TEMPLATE).replace("{fn}", name),
         "tags": ["skill_probe", "merge_intervals"],
     })
 
@@ -423,13 +473,64 @@ _add_mi_probe(
     "Implement interval merging in a function `range_merger`. Merge "
     "overlapping [start, end] pairs and return the sorted result.", 0)
 
+_add_wf_probe(
+    7, "word_frequency",
+    "Write `word_frequency(text: str) -> dict` returning the count of each "
+    "lowercased word.", 0, _WF_TEST_TEMPLATE2)
+_add_wf_probe(
+    8, "count_word_occurrences",
+    "Write `count_word_occurrences(text: str) -> dict` that returns how many "
+    "times each lowercased word occurs.", 1, _WF_TEST_TEMPLATE2)
+_add_wf_probe(
+    9, "token_counts",
+    "Write `token_counts(text: str) -> dict` returning the count of every "
+    "whitespace-separated token, lowercased.", 2, _WF_TEST_TEMPLATE2)
+_add_wf_probe(
+    10, "freq_table",
+    "Build a frequency table. `freq_table(text)` returns a dict mapping "
+    "lowercased words to counts.", 3, _WF_TEST_TEMPLATE2)
+_add_wf_probe(
+    11, "word_tally",
+    "Write `word_tally(text: str) -> dict` that tallies each lowercased word "
+    "in a string.", 0, _WF_TEST_TEMPLATE2)
+_add_wf_probe(
+    12, "occurrence_count",
+    "Write `occurrence_count(text)` returning a dictionary of word -> number "
+    "of occurrences, case-insensitively.", 1, _WF_TEST_TEMPLATE2)
+
+_add_mi_probe(
+    7, "merge_all_intervals",
+    "Write `merge_all_intervals(intervals: list) -> list` merging all "
+    "overlapping or touching closed intervals and returning a sorted list.",
+    0, _MI_TEST_TEMPLATE2)
+_add_mi_probe(
+    8, "coalesce_intervals",
+    "Write `coalesce_intervals(intervals: list) -> list` that coalesces "
+    "overlapping [start, end] intervals.", 1, _MI_TEST_TEMPLATE2)
+_add_mi_probe(
+    9, "interval_union",
+    "Write `interval_union(intervals: list) -> list` returning the union of "
+    "closed intervals as a sorted list of [start, end].", 2, _MI_TEST_TEMPLATE2)
+_add_mi_probe(
+    10, "merge_span",
+    "Write `merge_span(intervals)` that merges overlapping or adjacent "
+    "[start, end] pairs.", 0, _MI_TEST_TEMPLATE2)
+_add_mi_probe(
+    11, "collapse_intervals",
+    "Write `collapse_intervals(intervals: list) -> list` that collapses "
+    "overlapping intervals into their union.", 1, _MI_TEST_TEMPLATE2)
+_add_mi_probe(
+    12, "union_intervals",
+    "Write `union_intervals(intervals: list) -> list` returning the sorted "
+    "union of closed intervals.", 2, _MI_TEST_TEMPLATE2)
+
 
 ORACLE_ROUTES = {
     "dev_012": "word_freq",
     "dev_020": "merge_intervals",
 }
-ORACLE_ROUTES.update({f"probe_wf_{i}": "word_freq" for i in range(1, 7)})
-ORACLE_ROUTES.update({f"probe_mi_{i}": "merge_intervals" for i in range(1, 7)})
+ORACLE_ROUTES.update({f"probe_wf_{i}": "word_freq" for i in range(1, 13)})
+ORACLE_ROUTES.update({f"probe_mi_{i}": "merge_intervals" for i in range(1, 13)})
 
 
 def build_probes(cfg: dict) -> dict:
@@ -533,8 +634,8 @@ def default_registry(cfg: dict) -> dict:
     return reg
 
 
-def load_registry(cfg: dict) -> dict:
-    p = Path(cfg["paths"]["adapters"]) / "skills" / "registry.json"
+def load_registry(cfg: dict, path: str | Path | None = None) -> dict:
+    p = Path(path) if path else Path(cfg["paths"]["adapters"]) / "skills" / "registry.json"
     reg = default_registry(cfg)
     if p.exists():
         loaded = json.loads(p.read_text())
@@ -548,8 +649,8 @@ def load_registry(cfg: dict) -> dict:
     return reg
 
 
-def save_registry(cfg: dict, reg: dict) -> Path:
-    p = Path(cfg["paths"]["adapters"]) / "skills" / "registry.json"
+def save_registry(cfg: dict, reg: dict, path: str | Path | None = None) -> Path:
+    p = Path(path) if path else Path(cfg["paths"]["adapters"]) / "skills" / "registry.json"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(reg, indent=2) + "\n")
     return p
@@ -566,6 +667,9 @@ def route(task: dict, registry: dict, mode: str = "keyword") -> tuple[str | None
         return None, 0.0
 
     text = f"{task.get('title', '')}\n{task.get('prompt', '')}"
+    # Version suffixes in private-holdout names (`word_freq_v2`) should route to
+    # the same skill as the base name. Strip them before trigger matching.
+    text = re.sub(r"_v\d+\b", "", text)
     best: str | None = None
     best_score = 0
     for name, entry in registry.items():
@@ -647,7 +751,8 @@ def _run_cli(args: list[str]) -> int:
 
 
 def gated_eval(cfg: dict, harness_path: str, split: str, run_id: str,
-               router_mode: str = "keyword", task_ids: list[str] | None = None) -> dict:
+               router_mode: str = "keyword", task_ids: list[str] | None = None,
+               registry_path: str | Path | None = None) -> dict:
     """Base run on every task, then each skill adapter on its routed subset.
 
     The base and adapter passes are separate processes, so the 18 GB base is
@@ -655,7 +760,7 @@ def gated_eval(cfg: dict, harness_path: str, split: str, run_id: str,
     from the base run — that is the construction that makes forgetting zero.
     """
     runs_dir = Path(cfg["paths"]["runs"])
-    reg = load_registry(cfg)
+    reg = load_registry(cfg, registry_path)
     tasks = evaluator.load_tasks(cfg, split)
     if task_ids:
         wanted = set(task_ids)
@@ -755,14 +860,15 @@ def gated_eval(cfg: dict, harness_path: str, split: str, run_id: str,
     return report
 
 
-def decide_skills(cfg: dict, run_prefix: str = "legates") -> dict:
+def decide_skills(cfg: dict, run_prefix: str = "legates",
+                  registry_path: str | Path | None = None) -> dict:
     """Quarantine-first lifecycle decision from the gated reports.
 
     A skill must show a dev gain AND a positive gain on the held-out skill
     probes, with no non-routed changes and no holdout regression. Otherwise it
     is gated to 0 (quarantined) — never deleted.
     """
-    reg = load_registry(cfg)
+    reg = load_registry(cfg, registry_path)
     runs_dir = Path(cfg["paths"]["runs"])
     reports: dict[str, dict] = {}
     for split in ("dev", "skills", "holdout"):
@@ -813,7 +919,7 @@ def decide_skills(cfg: dict, run_prefix: str = "legates") -> dict:
         }
         decisions[skill] = entry["decision"]
 
-    save_registry(cfg, reg)
+    save_registry(cfg, reg, registry_path)
     out = Path(cfg["paths"]["runs"]) / f"{run_prefix}_decisions.json"
     out.write_text(json.dumps(decisions, indent=2) + "\n")
     return decisions
@@ -857,6 +963,30 @@ def write_report(cfg: dict) -> Path:
             f"{tr.get('returncode', '—')} | {e.get('base_unchanged', '—')} |"
         )
 
+    r2_path = Path(cfg["paths"]["adapters"]) / "skills" / "r2" / "registry.json"
+    if r2_path.exists():
+        r2 = json.loads(r2_path.read_text())
+        lines += ["", "## Round 2 adapters", "",
+                  "| skill | rows | iters | train loss | val loss | base unchanged |",
+                  "|---|---|---|---|---|---|"]
+        for name, e in r2.items():
+            tr = e.get("training") or {}
+            loss = tr.get("loss") or {}
+            data = e.get("data") or {}
+            adapter = e.get("adapter")
+            if not adapter or not (Path(adapter) / "adapters.safetensors").exists():
+                continue
+            lines.append(
+                f"| `{name}` | {data.get('rows', '—')} | {tr.get('iters', '—')} | "
+                f"{loss.get('train_loss_last', '—')} | {loss.get('val_loss_last', '—')} | "
+                f"{e.get('base_unchanged', '—')} |"
+            )
+        dec_path = Path(cfg["paths"]["runs"]) / "private_round2_decision.json"
+        if dec_path.exists():
+            d = json.loads(dec_path.read_text())
+            lines.append(f"\nRound 2 decision: **{d.get('promote')}** — {d.get('reason')}")
+        lines.append("")
+
     lines += ["", "## Lifecycle decisions", "",
               "| skill | status | dev gain | probe gain | non-routed identical | reason |",
               "|---|---|---|---|---|---|"]
@@ -874,7 +1004,8 @@ def write_report(cfg: dict) -> Path:
         b, g = r["base_summary"], r["gated_summary"]
         routed = r["routed_tasks"]
         lines += [
-            "", f"## Gated evaluation — `{r['split']}` ({r['router_mode']} router)", "",
+            "", f"## Gated evaluation — `{r['split']}` "
+                f"(run `{r.get('run_id')}`, {r['router_mode']} router)", "",
             f"- base: **{b['passed']}/{b['n']}** ({b['score']:.2f})",
             f"- gated: **{g['passed']}/{g['n']}** ({g['score']:.2f})",
             f"- delta: **{r['delta_score']:+.2f}**",

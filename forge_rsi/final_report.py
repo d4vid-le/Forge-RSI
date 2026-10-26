@@ -41,7 +41,7 @@ def write(cfg: dict) -> Path:
         "# Forge-RSI — final report",
         "",
         "All scores below are measured on frozen tasks with hidden `unittest` tests.",
-        "The holdout is evaluated once per round and never used to choose a harness.",
+        "The holdout is a fixed public regression set, used only as a guard, never to choose a harness.",
         "",
     ]
 
@@ -141,7 +141,7 @@ def write(cfg: dict) -> Path:
         lines += ["## Le-Gates skill isolation (frozen base + gated adapters)", ""]
         if registry_path.exists():
             reg = json.loads(registry_path.read_text())
-            lines += ["| skill | status | dev gain | probe gain | reason |",
+            lines += ["| skill | status | dev gain | probe gain (12) | reason |",
                       "|---|---|---|---|---|"]
             for name, e in reg.items():
                 d = e.get("decision") or {}
@@ -150,23 +150,81 @@ def write(cfg: dict) -> Path:
                     f"{d.get('probe_gain', '—')} | {d.get('reason', '—')} |"
                 )
             lines.append("")
+            lines += ["The original 12-probe decision table is above. The expanded",
+                      "24-probe set is in the gated table below: `word_freq` +11,",
+                      "`merge_intervals` +3.", ""]
         if gated:
-            lines += ["| split | base | gated | delta | non-routed identical | base unchanged |",
-                      "|---|---|---|---|---|---|"]
+            lines += ["| run | split | base | gated | delta | non-routed identical | base unchanged |",
+                      "|---|---|---|---|---|---|---|"]
             for p in gated:
                 r = json.loads(p.read_text())
                 b, g = r["base_summary"], r["gated_summary"]
+                run = p.name.replace("_gated_report.json", "")
                 lines.append(
-                    f"| `{r['split']}` | {b['passed']}/{b['n']} ({b['score']:.2f}) | "
+                    f"| `{run}` | `{r['split']}` | {b['passed']}/{b['n']} ({b['score']:.2f}) | "
                     f"{g['passed']}/{g['n']} ({g['score']:.2f}) | {r['delta_score']:+.2f} | "
                     f"{r['non_routed_identical']} | {r['base_unchanged']} |"
                 )
             lines.append("")
 
+    # ── Composition experiment ───────────────────────────────────────────
+    comp_path = runs_dir / "composition_matrix.json"
+    if comp_path.exists():
+        c = json.loads(comp_path.read_text())
+        lines += [
+            "## Composition experiment (two skills, one compound task)", "",
+            "Each compound task requires both `word_freq` and `merge_intervals`.",
+            "`dual_full` is gate 1.0 + 1.0 (Σ=2); `dual_half` is 0.5 + 0.5 (Σ=1).",
+            "The deployed router is also Σ≤1.", "",
+            "| config | parts word | parts merge | whole | word fn ok | merge fn ok |",
+            "|---|---|---|---|---|---|",
+        ]
+        for name, r in c["configs"].items():
+            lines.append(
+                f"| `{name}` | {r.get('parts_word', '—')}/{r.get('parts_word_n', '—')} | "
+                f"{r.get('parts_merge', '—')}/{r.get('parts_merge_n', '—')} | "
+                f"**{r['whole_pass']}/{r['whole_n']}** | {r['word_ok']}/{r['whole_n']} | "
+                f"{r['merge_ok']}/{r['whole_n']} |"
+            )
+        lines += ["", "A single gate can pass its own part and still fail the whole.",
+                  "The matrix reports what happened on this rig; it does not force the",
+                  "paper's 0.5B collapse result.", ""]
+
+    # ── private holdout / round 2 ────────────────────────────────────────
+    priv = []
+    for tag in ("private_r1", "private_r2"):
+        p = runs_dir / f"{tag}_private_holdout_gated_report.json"
+        if p.exists():
+            priv.append((tag, json.loads(p.read_text())))
+    if priv:
+        lines += ["## Private holdout (10 tasks, withheld from the public repo)", "",
+                  "8 tasks route to a skill; 2 are unrelated controls. Only aggregate",
+                  "scores are reported; the task definitions are not published.", "",
+                  "| run | base | gated | delta | routed | non-routed identical | base unchanged |",
+                  "|---|---|---|---|---|---|---|"]
+        for tag, r in priv:
+            b, g = r["base_summary"], r["gated_summary"]
+            lines.append(
+                f"| `{tag}` | {b['passed']}/{b['n']} ({b['score']:.2f}) | "
+                f"{g['passed']}/{g['n']} ({g['score']:.2f}) | {r['delta_score']:+.2f} | "
+                f"{len(r['routed_tasks'])} | {r['non_routed_identical']} | {r['base_unchanged']} |"
+            )
+        lines.append("")
+    dec_path = runs_dir / "private_round2_decision.json"
+    if dec_path.exists():
+        d = json.loads(dec_path.read_text())
+        lines += ["### Round 2 decision", "",
+                  f"- private holdout delta: {d.get('private_delta'):+.2f}",
+                  f"- public dev delta: {d.get('public_dev_delta'):+.2f}",
+                  f"- public probe delta: {d.get('public_probe_delta'):+.2f}",
+                  f"- **promote round 2: {d.get('promote')}**",
+                  f"- reason: {d.get('reason')}", ""]
+
     # ── SkillForge bridge ────────────────────────────────────────────────
     manifests = sorted((Path(cfg["paths"]["curriculum"]) / "01_raw").glob("*.manifest.json"))
     if manifests:
         lines += ["## SkillForge data (Layer 3)", "",
+                  "These are plumbing smoke-test rows, not a capability claim.", "",
                   "| file | rows | success | repair | tasks covered | runs |",
                   "|---|---|---|---|---|---|"]
         for p in manifests:
@@ -211,9 +269,11 @@ def write(cfg: dict) -> Path:
         "- Dream replay re-ranks cached samples; it does not evaluate new prompts.",
         "- A single round on 20 dev tasks has a granularity of 0.05. Deltas smaller",
         "  than that are noise unless the cost also moves.",
-        "- Adapters are candidates, not automatic improvements; the promotion rule",
+        "- Adapters are candidates, not automatic improvements; the round-1 rule",
         "  requires a holdout non-regression and a dev gain (or, at the dev ceiling,",
         "  a holdout gain with no dev regression).",
+        "- Round 2 used a stricter rule: a private-holdout gain, no public dev or",
+        "  probe regression, and no forgetting. A tie keeps the incumbent.",
         "",
     ]
 

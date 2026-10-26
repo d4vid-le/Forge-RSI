@@ -1,0 +1,13 @@
+{
+  "id": "probe_wf_12",
+  "title": "occurrence_count",
+  "prompt": "Write `occurrence_count(text)` returning a dictionary of word -> number of occurrences, case-insensitively.",
+  "tests": "import unittest\nfrom solution import occurrence_count\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(occurrence_count(\"a b a\"), {\"a\": 2, \"b\": 1})\n    def test_case(self):\n        self.assertEqual(occurrence_count(\"Hi hi HI\"), {\"hi\": 3})\n    def test_empty(self):\n        self.assertEqual(occurrence_count(\"\"), {})\n    def test_whitespace(self):\n        self.assertEqual(occurrence_count(\"a  b\\ta\\nb\"), {\"a\": 2, \"b\": 2})\n    def test_single(self):\n        self.assertEqual(occurrence_count(\"solo\"), {\"solo\": 1})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "skill_probe",
+    "word_freq"
+  ],
+  "difficulty": "medium"
+}

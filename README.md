@@ -49,14 +49,51 @@ reference solutions proven before the tasks enter the suite.
 |---|---|---|---|---|---|---|
 | dev (20) | 18/20 (0.90) | **20/20 (1.00)** | +0.10 | `dev_012`, `dev_020` | yes | unchanged |
 | holdout (10) | 8/10 (0.80) | 8/10 (0.80) | 0.00 | none | yes | unchanged |
-| skill probes (12) | 5/12 (0.42) | **12/12 (1.00)** | +0.58 | all 12 | yes | unchanged |
+| skill probes (24) | 9/24 (0.38) | **23/24 (0.96)** | +0.58 | all 24 | yes | unchanged |
 
-- `word_freq`: dev +1, probe +4.
-- `merge_intervals`: dev +1, probe +3.
+- `word_freq`: dev +1, 24-probe +11.
+- `merge_intervals`: dev +1, 24-probe +3.
 - Both adapters promoted; both base checksums unchanged.
-- The probes include function names that were **not** in the training corpus
-  (`token_frequency`, `merge_intervals_sorted`, `merge_closed_intervals`,
-  `range_merger`), so the 12/12 is transfer, not just memorization.
+- The original 12-probe subset is 12/12. The expanded 24-probe set uses new
+  function names and test cases; it is **23/24**. The one failure is a
+  function-name drift: the adapter emitted `combine_intervals` when the task
+  asked for `merge_overlapping`. That is a real generalization failure, not a
+  test artifact.
+
+### Composition test (two skills, one compound task)
+
+Each compound task requires both `word_freq` and `merge_intervals` in one
+solution. `dual_full` is gate 1.0 + 1.0 (Σ=2); `dual_half` is 0.5 + 0.5 (Σ=1).
+
+| config | parts word | parts merge | whole |
+|---|---|---|---|
+| base | 0/3 | 2/3 | 0/5 |
+| word gate | 3/3 | 1/3 | 1/5 |
+| merge gate | 0/3 | 3/3 | 0/5 |
+| dual full (Σ=2) | 3/3 | 3/3 | 0/5 |
+| dual half (Σ=1) | 3/3 | 3/3 | 0/5 |
+
+Single gates solve their own parts and fail the whole. Both dual adapters
+preserve both parts (6/6), but neither solves the whole: the model does not
+emit both functions in one response. This is a **generation/composition gap**,
+not a weight-interference collapse. The deployed router stays at Σ≤1 and makes
+no composition claim.
+
+### Private holdout and round 2
+
+10 tasks withheld from this repository: 4 word-frequency variants, 4 interval
+variants, and 2 unrelated controls. Round 2 adapters were trained from the base
+on a fresh corpus (seed 1, 60 rows, 160 iters) with the same rank-8 recipe.
+
+| run | base | gated | delta |
+|---|---|---|---|
+| round 1 | 5/10 (0.50) | **10/10 (1.00)** | +0.50 |
+| round 2 | 5/10 (0.50) | **10/10 (1.00)** | +0.50 |
+
+Decision: **keep round 1**. Round 2 ties the blind holdout; the extra 20 rows
+and 40 iters bought no blind gain. Public dev and the 24-probe set also tie
+(20/20 and 23/24), so the promotion rule keeps the incumbent. The
+`merge_overlapping` name-collision in the 24-probe set persists in both rounds.
 
 ### RSI harness search
 
@@ -211,7 +248,7 @@ Early-stage research code. The mechanism works and is measured; the production
 harness and training UI are the next program, not a current claim.
 
 - Harness search: measured, with accepted/rejected proposals logged.
-- Le-Gates: measured on dev + 12 held-out probes, with a zero-forgetting check.
+- Le-Gates: measured on dev + 24 held-out probes, with a zero-forgetting check.
 - SkillForge curation: real import/accept/export with hard gates.
 - Training: real `mlx_lm.lora`, no simulated loss.
 

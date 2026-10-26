@@ -12,6 +12,8 @@ curriculum/01_raw/*
 curriculum/02_curated/*
 curriculum/03_ready-for-training/*
 !curriculum/*/README.md
+tasks/private_holdout/
+tasks/build_private_holdout.py
 *.safetensors
 *.db
 *.sqlite

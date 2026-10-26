@@ -27,6 +27,13 @@ Return a single improved harness as a JSON object with exactly these keys:
 Hard rules:
 - Output ONLY the JSON object. No markdown fences, no commentary.
 - Change at most {max_diff} top-level fields compared with the current harness.
+- Do not propose a harness identical to a candidate that was already rejected.
+  Read RECENT HISTORY and choose a different lever.
+- If ENGINEERING PROBES show a configuration with a better dev score at lower
+  cost than the incumbent, prefer reusing that configuration over a speculative
+  new edit. The probes are measured, not hypothetical.
+- If the failure is a syntactic stub and a nonstub_retry probe solved it, use
+  nonstub_retry; do not spend a turn on run_tests for a stub.
 - Prefer ONE surgical change that directly addresses the observed failure. If the
   failure is a model-capability error (wrong algorithm, wrong API use), do not try
   to fix it with generic prompt advice — keep the incumbent or add the run_tests

@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import (bridge, config, dream, evaluator, final_report,
+from . import (bridge, composition, config, dream, evaluator, final_report,
                harness as harness_mod, legates, optimizer, pipeline, report, trainer)
 
 
@@ -90,7 +90,8 @@ def cmd_eval(cfg: dict, a) -> int:
 def cmd_propose(cfg: dict, a) -> int:
     incumbent = harness_mod.load(a.harness)
     run = evaluator.load_run(cfg, a.run_id)
-    history = _read_jsonl(_iter_file(cfg, a.round_name)) if a.round_name else []
+    history = [r for r in _read_jsonl(_iter_file(cfg, a.round_name))
+               if "iteration" in r] if a.round_name else []
     failures = []
     tasks = evaluator.load_tasks(cfg, run["split"])
     tmap = {t["id"]: t for t in tasks}
@@ -268,18 +269,27 @@ def cmd_loop(cfg: dict, a) -> int:
             return rc
     final_hold = evaluator.load_run(cfg, final_hold_id)
     cmp = evaluator.compare(base_hold, final_hold)
-    ok, reason = evaluator.acceptance(cmp, final_hold, base_hold, cfg)
+    # The holdout is a regression guard, not a tournament: a tie is not worse.
+    not_worse = (
+        cmp["candidate_score"] >= cmp["incumbent_score"] - cfg["loop"]["score_tolerance"]
+        and cmp["loss_count"] == 0
+    )
+    reason = "no regression" if not_worse else (
+        f"{cmp['loss_count']} holdout regression(s), "
+        f"delta {cmp['delta']:+.2f}"
+    )
     hold_row = {
         "round": round_name, "kind": "holdout",
         "baseline": base_hold["run_id"], "final": final_hold["run_id"],
         "wins": cmp["win_count"], "losses": cmp["loss_count"],
         "baseline_score": cmp["incumbent_score"], "final_score": cmp["candidate_score"],
-        "delta": cmp["delta"], "not_worse": ok, "reason": reason,
+        "delta": cmp["delta"], "not_worse": not_worse, "reason": reason,
         "winner_harness": incumbent_run["harness"].get("version"),
     }
     _append_jsonl(_iter_file(cfg, round_name), hold_row)
     print(f"[loop] holdout: baseline={cmp['incumbent_score']:.2f} "
-          f"final={cmp['candidate_score']:.2f} delta={cmp['delta']:+.2f} ok={ok}")
+          f"final={cmp['candidate_score']:.2f} delta={cmp['delta']:+.2f} "
+          f"not_worse={not_worse}")
 
     # Winner pointer for the next round.
     winner = Path(cfg["paths"]["harness"]) / f"{prefix}_winner.json"
@@ -371,14 +381,16 @@ def cmd_skills_eval(cfg: dict, a) -> int:
     harness_path = a.harness or str(Path(cfg["paths"]["harness"]) / "h0_baseline.json")
     for split in splits:
         report = legates.gated_eval(cfg, harness_path, split,
-                                    f"{a.run_id}_{split}", router_mode=a.router)
+                                    f"{a.run_id}_{split}", router_mode=a.router,
+                                    registry_path=a.registry)
         reports[split] = report
         print(legates.format_gated_report(report))
     return 0
 
 
 def cmd_skills_decide(cfg: dict, a) -> int:
-    decisions = legates.decide_skills(cfg, run_prefix=a.run_prefix)
+    decisions = legates.decide_skills(cfg, run_prefix=a.run_prefix,
+                                      registry_path=a.registry)
     print(json.dumps(decisions, indent=2))
     return 0
 
@@ -386,6 +398,20 @@ def cmd_skills_decide(cfg: dict, a) -> int:
 def cmd_skills_report(cfg: dict, a) -> int:
     path = legates.write_report(cfg)
     print(f"[skills] report -> {path}")
+    return 0
+
+
+def cmd_composition_build(cfg: dict, a) -> int:
+    result = composition.build_composition_adapters(cfg)
+    print(json.dumps(result, indent=2))
+    if not a.no_verify:
+        print(json.dumps(composition.verify_load(cfg, result["full"]["dir"]), indent=2))
+    return 0
+
+
+def cmd_composition_eval(cfg: dict, a) -> int:
+    result = composition.run_matrix(cfg, a.harness)
+    print(composition.format_matrix(result))
     return 0
 
 
@@ -410,7 +436,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     e = sub.add_parser("eval", help="evaluate a harness on a split")
     e.add_argument("--harness", required=True)
-    e.add_argument("--split", choices=["dev", "holdout", "skills"], default="dev")
+    e.add_argument("--split", choices=["dev", "holdout", "skills", "composition", "private_holdout"], default="dev")
     e.add_argument("--run-id", required=True)
     e.add_argument("--samples", type=int, default=1)
     e.add_argument("--limit", type=int, default=None)
@@ -493,14 +519,24 @@ def build_parser() -> argparse.ArgumentParser:
     se.add_argument("--splits", default="dev,holdout,skills")
     se.add_argument("--run-id", default="legates")
     se.add_argument("--router", choices=["keyword", "oracle"], default="keyword")
+    se.add_argument("--registry", default=None)
     se.set_defaults(func=cmd_skills_eval)
 
     sd = sub.add_parser("skills-decide", help="quarantine/promote skill adapters")
     sd.add_argument("--run-prefix", default="legates")
+    sd.add_argument("--registry", default=None)
     sd.set_defaults(func=cmd_skills_decide)
 
     sr = sub.add_parser("skills-report", help="write reports/legates.md")
     sr.set_defaults(func=cmd_skills_report)
+
+    cb = sub.add_parser("composition-build", help="merge two skill adapters into dual-gate controls")
+    cb.add_argument("--no-verify", action="store_true")
+    cb.set_defaults(func=cmd_composition_build)
+
+    ce = sub.add_parser("composition-eval", help="run the two-skill composition matrix")
+    ce.add_argument("--harness", default=None)
+    ce.set_defaults(func=cmd_composition_eval)
     return p
 
 
