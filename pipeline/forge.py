@@ -58,6 +58,16 @@ TRAIN_RE = re.compile(
     r"(?:,\s+Peak mem\s+(?P<mem>[0-9.]+)\s*GB)?")
 VAL_RE = re.compile(r"Iter\s+(?P<iter>\d+):\s+Val loss\s+(?P<loss>[0-9.]+)"
                     r"(?:,\s+Val took\s+(?P<secs>[0-9.]+)s)?")
+# mlx_lm >= 0.31 prints a compact progress table with ANSI colours:
+#   "  10    1.045 ▼      424      0.6k"      (train)
+#   "  10    val 0.281    0.03s"              (validation)
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+COMPACT_TRAIN_RE = re.compile(
+    r"^\s*(?P<iter>\d+)\s+(?P<loss>[0-9]+\.[0-9]+)\s+[▼▲]\s+(?P<toksec>[0-9.]+)",
+    re.MULTILINE)
+COMPACT_VAL_RE = re.compile(
+    r"^\s*(?P<iter>\d+)\s+val\s+(?P<loss>[0-9.]+)\s+(?P<secs>[0-9.]+)s",
+    re.MULTILINE)
 
 
 # ── environment ─────────────────────────────────────────────────────────────
@@ -459,30 +469,55 @@ def stop_run(run_name: str) -> dict:
     return dict(ok=False, reason="not running")
 
 
+def parse_train_log(text: str) -> dict:
+    """Parse an mlx_lm training log.
+
+    Handles both the historic `Iter N: Train loss ...` lines and the compact
+    colour-coded table used by mlx_lm >= 0.31. No numbers are inferred: points
+    only appear when the log actually printed them.
+    """
+    text = ANSI_RE.sub("", text)
+    train_pts, val_pts = [], []
+    for m in TRAIN_RE.finditer(text):
+        train_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
+                              lr=float(m.group("lr")) if m.group("lr") else None,
+                              it_sec=float(m.group("itsec")) if m.group("itsec") else None,
+                              tok_sec=float(m.group("toksec")) if m.group("toksec") else None,
+                              mem=float(m.group("mem")) if m.group("mem") else None))
+    for m in COMPACT_TRAIN_RE.finditer(text):
+        train_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
+                              lr=None, it_sec=None,
+                              tok_sec=float(m.group("toksec")), mem=None))
+    for m in VAL_RE.finditer(text):
+        val_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
+                            secs=float(m.group("secs")) if m.group("secs") else None))
+    for m in COMPACT_VAL_RE.finditer(text):
+        val_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
+                            secs=float(m.group("secs"))))
+    err = None
+    if "Traceback" in text:
+        err = "traceback in log"
+    else:
+        for ln in reversed(text.strip().splitlines()[-5:] or []):
+            if re.match(r"^(Error|error|Exception|[A-Za-z_.]+Error):", ln.strip()):
+                err = ln.strip()[:200]
+                break
+    return dict(
+        train=train_pts, val=val_pts,
+        tail=text.strip().splitlines()[-25:], error=err,
+        finished=bool(re.search(r"^train\s+.*100%", text, re.MULTILINE)),
+    )
+
+
 def run_status(run_name: str) -> dict:
     rd = _run_dir(run_name)
     meta = _read_meta(run_name) or dict(name=run_name, run_dir=str(rd))
     logf = rd / "train.log"
-    train_pts, val_pts, tail, err = [], [], [], None
-    if logf.exists():
-        text = logf.read_text(errors="replace")
-        for m in TRAIN_RE.finditer(text):
-            train_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
-                                  lr=float(m.group("lr")) if m.group("lr") else None,
-                                  it_sec=float(m.group("itsec")) if m.group("itsec") else None,
-                                  tok_sec=float(m.group("toksec")) if m.group("toksec") else None,
-                                  mem=float(m.group("mem")) if m.group("mem") else None))
-        for m in VAL_RE.finditer(text):
-            val_pts.append(dict(iter=int(m.group("iter")), loss=float(m.group("loss")),
-                                secs=float(m.group("secs")) if m.group("secs") else None))
-        tail = text.strip().splitlines()[-25:]
-        if "Traceback" in text:
-            err = "traceback in log"
-        else:
-            for ln in reversed(text.strip().splitlines()[-5:] or []):
-                if re.match(r"^(Error|error|Exception|[A-Za-z_.]+Error):", ln.strip()):
-                    err = ln.strip()[:200]
-                    break
+    parsed = (parse_train_log(logf.read_text(errors="replace")) if logf.exists()
+              else dict(train=[], val=[], tail=[], error=None, finished=False))
+    train_pts, val_pts = parsed["train"], parsed["val"]
+    tail, err = parsed["tail"], parsed["error"]
+    finished_marker = parsed["finished"]
     proc = _PROCS.get(run_name)
     if proc is not None:
         code = proc.poll()
@@ -492,15 +527,17 @@ def run_status(run_name: str) -> dict:
         status = meta.get("status", "unknown")
         if is_running(run_name):
             status = "running"
-        elif train_pts:
+        elif train_pts or finished_marker:
             status = "finished" if meta.get("status") != "failed" else "failed"
     if status == "running" and proc is None and not is_running(run_name):
         status = "stopped"
-    return dict(**meta, status=status, exit_code=code, train=train_pts, val=val_pts,
-                last_train=train_pts[-1] if train_pts else None,
-                last_val=val_pts[-1] if val_pts else None,
-                tail=tail, error=err,
-                elapsed_s=_elapsed(meta.get("started"), status))
+    out = dict(meta)
+    out.update(status=status, exit_code=code, train=train_pts, val=val_pts,
+               last_train=train_pts[-1] if train_pts else None,
+               last_val=val_pts[-1] if val_pts else None,
+               tail=tail, error=err,
+               elapsed_s=_elapsed(meta.get("started"), status))
+    return out
 
 
 def _elapsed(started: str | None, status: str) -> float | None:

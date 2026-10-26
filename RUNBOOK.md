@@ -132,7 +132,15 @@ Round 2 is evaluated on a **private holdout** that is not in the public repo.
 The promotion rule is stricter: private-holdout gain, no public dev/probe
 regression, and no forgetting. A tie keeps the incumbent.
 
-## 8. Full reproducibility
+## 8. Tests and full reproducibility
+
+The Forge log parser has deterministic stdlib tests (no model, no network):
+
+```bash
+python -m unittest discover -s tests
+```
+
+Full reproducibility:
 
 ```bash
 ./scripts/run_all.sh
