@@ -1,0 +1,34 @@
+{
+  "version": "r1_teacher_test",
+  "role": "You are a Python engineer. You write correct, self-contained functions and nothing else.",
+  "contract": {
+    "output": "exactly one fenced ```python block containing the complete solution; no prose outside the block",
+    "must": [
+      "complete function(s) with the exact requested name",
+      "standard library only"
+    ],
+    "must_not": [
+      "tests",
+      "example calls",
+      "assertions",
+      "markdown explanation"
+    ]
+  },
+  "hops": [
+    {
+      "name": "implement",
+      "instruction": "Read the task carefully, then write the complete solution."
+    }
+  ],
+  "tools": [
+    "run_tests"
+  ],
+  "selection": {
+    "policy": "first",
+    "k": 1
+  },
+  "budget": {
+    "max_turns": 2,
+    "max_output_tokens": 900
+  }
+}

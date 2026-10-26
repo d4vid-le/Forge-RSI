@@ -1,0 +1,13 @@
+{
+  "id": "probe_wf_3",
+  "title": "frequency",
+  "prompt": "Write a function `frequency(text)` that returns a dict of word -> count for a string. Words are separated by whitespace and compared case-insensitively.",
+  "tests": "import unittest\nfrom solution import frequency\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(frequency(\"a b a\"), {\"a\": 2, \"b\": 1})\n    def test_case(self):\n        self.assertEqual(frequency(\"Hi hi HI\"), {\"hi\": 3})\n    def test_empty(self):\n        self.assertEqual(frequency(\"\"), {})\n    def test_punct(self):\n        self.assertEqual(frequency(\"a, a,\"), {\"a,\": 2})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "skill_probe",
+    "word_freq"
+  ],
+  "difficulty": "medium"
+}

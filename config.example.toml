@@ -1,0 +1,68 @@
+# Forge-RSI example configuration.
+#
+# Copy to config.toml and point the model paths at your local MLX models:
+#   cp config.example.toml config.toml
+#   mkdir -p models
+#   ln -s /path/to/MiMo-v2.6-distill-qwen-9b-mlx models/MiMo-v2.6-distill-qwen-9b-mlx
+#   ln -s /path/to/Qwen3.6-35B-A3B-MLX-8bit  models/Qwen3.6-35B-A3B-MLX-8bit
+#
+# Relative paths resolve against this file's directory.
+
+[paths]
+project = "."
+models = "models"
+agent = "models/MiMo-v2.6-distill-qwen-9b-mlx"
+teacher = "models/Qwen3.6-35B-A3B-MLX-8bit"
+fallback_agent = "models/Muse-Glimmer-30B-4bit"
+code_agent = "models/Qwen2.5-Coder-14B-Instruct-MLX-bf16"
+tasks = "tasks"
+harness = "harness"
+runs = "runs"
+reports = "reports"
+adapters = "adapters"
+curriculum = "curriculum"
+
+[agent]
+temperature = 0.2
+top_p = 0.95
+max_output_tokens = 900
+seed = 0
+enable_thinking = false
+
+[teacher]
+temperature = 0.35
+top_p = 0.95
+max_output_tokens = 4096
+seed = 1
+
+[loop]
+dev_split = "dev"
+holdout_split = "holdout"
+iterations = 5
+patience = 2
+accept_margin = 0.0
+score_tolerance = 0.05
+cost_ceiling = 1.5
+max_diff_fields = 2
+max_prompt_chars = 7200
+samples_per_task = 1
+
+[dream]
+samples = 3
+temperature = 0.7
+policies = ["first", "longest", "majority", "test_gated", "best_of_k_oracle"]
+
+[skillforge]
+min_cluster_failures = 3
+min_rows = 12
+export_dir = "curriculum/03_ready-for-training"
+raw_dir = "curriculum/01_raw"
+
+[train]
+iters = 200
+batch_size = 1
+num_layers = 8
+max_seq_length = 1024
+learning_rate = 0.00001
+rank = 8
+scale = 20.0

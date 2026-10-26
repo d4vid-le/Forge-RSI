@@ -1,0 +1,10 @@
+{
+  "id": "dev_019",
+  "title": "run_length_encode",
+  "prompt": "Write `rle(s: str) -> str` returning a run-length encoding. Each run of the same character becomes the character followed by its count. Example: `aaab` -> `a3b1`; empty string -> empty string.",
+  "tests": "import unittest\nfrom solution import rle\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(rle(\"aaab\"), \"a3b1\")\n    def test_single(self):\n        self.assertEqual(rle(\"a\"), \"a1\")\n    def test_empty(self):\n        self.assertEqual(rle(\"\"), \"\")\n    def test_alternating(self):\n        self.assertEqual(rle(\"abab\"), \"a1b1a1b1\")",
+  "difficulty": "medium",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

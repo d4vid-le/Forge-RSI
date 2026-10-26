@@ -1,0 +1,10 @@
+{
+  "id": "dev_013",
+  "title": "flatten_one",
+  "prompt": "Write `flatten(items: list) -> list` that flattens exactly one level of nesting. Non-list elements are kept as-is.",
+  "tests": "import unittest\nfrom solution import flatten\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(flatten([1, [2, 3], 4]), [1, 2, 3, 4])\n    def test_empty_inner(self):\n        self.assertEqual(flatten([[], 1]), [1])\n    def test_no_nesting(self):\n        self.assertEqual(flatten([1, 2]), [1, 2])\n    def test_deep_not_fully_flattened(self):\n        self.assertEqual(flatten([[1, [2]]]), [1, [2]])",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

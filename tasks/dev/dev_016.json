@@ -1,0 +1,10 @@
+{
+  "id": "dev_016",
+  "title": "caesar",
+  "prompt": "Write `caesar(s: str, shift: int) -> str` that shifts letters by shift positions, wrapping around the alphabet, preserving case. Non-letters are unchanged. Negative shifts go backwards.",
+  "tests": "import unittest\nfrom solution import caesar\n\nclass T(unittest.TestCase):\n    def test_forward(self):\n        self.assertEqual(caesar(\"abc\", 1), \"bcd\")\n    def test_wrap(self):\n        self.assertEqual(caesar(\"xyz\", 3), \"abc\")\n    def test_case_and_punct(self):\n        self.assertEqual(caesar(\"Az!\", 1), \"Ba!\")\n    def test_negative(self):\n        self.assertEqual(caesar(\"abc\", -1), \"zab\")",
+  "difficulty": "medium",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

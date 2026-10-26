@@ -1,0 +1,12 @@
+{
+  "id": "hold_006",
+  "title": "roman_to_int",
+  "prompt": "Write `roman_to_int(s: str) -> int` converting a valid uppercase Roman numeral to an integer. Handle subtractive pairs (IV, IX, XL, XC, CD, CM).",
+  "tests": "import unittest\nfrom solution import roman_to_int\n\nclass T(unittest.TestCase):\n    def test_simple(self):\n        self.assertEqual(roman_to_int(\"XII\"), 12)\n    def test_subtractive(self):\n        self.assertEqual(roman_to_int(\"IX\"), 9)\n    def test_large(self):\n        self.assertEqual(roman_to_int(\"MCMXCIV\"), 1994)\n    def test_one(self):\n        self.assertEqual(roman_to_int(\"I\"), 1)",
+  "difficulty": "medium",
+  "tags": [
+    "strings"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

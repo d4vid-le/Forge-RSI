@@ -1,0 +1,26 @@
+# Local-only artifacts. Nothing below is required to read the code or run the
+# synthetic task suite.
+config.toml
+models/
+adapters/
+runs/
+exports/
+data/
+rsi_smoke/
+training-curriculum/telemetry/
+curriculum/01_raw/*
+curriculum/02_curated/*
+curriculum/03_ready-for-training/*
+!curriculum/*/README.md
+*.safetensors
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+workspace/node_modules/
+workspace/dist/

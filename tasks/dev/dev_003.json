@@ -1,0 +1,10 @@
+{
+  "id": "dev_003",
+  "title": "max_of_three",
+  "prompt": "Write `max_of_three(a, b, c)` that returns the largest of three numbers.",
+  "tests": "import unittest\nfrom solution import max_of_three\n\nclass T(unittest.TestCase):\n    def test_first(self):\n        self.assertEqual(max_of_three(9, 2, 1), 9)\n    def test_second(self):\n        self.assertEqual(max_of_three(1, 9, 2), 9)\n    def test_third(self):\n        self.assertEqual(max_of_three(1, 2, 9), 9)\n    def test_ties(self):\n        self.assertEqual(max_of_three(5, 5, 5), 5)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

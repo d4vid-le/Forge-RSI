@@ -1,0 +1,13 @@
+{
+  "id": "probe_wf_4",
+  "title": "count_occurrences",
+  "prompt": "Write `count_occurrences(text: str) -> dict` that returns the number of occurrences of every lowercased word in the text.",
+  "tests": "import unittest\nfrom solution import count_occurrences\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(count_occurrences(\"a b a\"), {\"a\": 2, \"b\": 1})\n    def test_case(self):\n        self.assertEqual(count_occurrences(\"Hi hi HI\"), {\"hi\": 3})\n    def test_empty(self):\n        self.assertEqual(count_occurrences(\"\"), {})\n    def test_punct(self):\n        self.assertEqual(count_occurrences(\"a, a,\"), {\"a,\": 2})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "skill_probe",
+    "word_freq"
+  ],
+  "difficulty": "medium"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "dev_005",
+  "title": "count_vowels",
+  "prompt": "Write `count_vowels(s: str) -> int` that counts vowels (a, e, i, o, u) case-insensitively.",
+  "tests": "import unittest\nfrom solution import count_vowels\n\nclass T(unittest.TestCase):\n    def test_lower(self):\n        self.assertEqual(count_vowels(\"hello\"), 2)\n    def test_upper(self):\n        self.assertEqual(count_vowels(\"AEIOU\"), 5)\n    def test_none(self):\n        self.assertEqual(count_vowels(\"xyz\"), 0)\n    def test_mixed(self):\n        self.assertEqual(count_vowels(\"Python\"), 1)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

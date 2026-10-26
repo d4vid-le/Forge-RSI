@@ -1,0 +1,10 @@
+{
+  "id": "dev_001",
+  "title": "add_two",
+  "prompt": "Write a function `add(a, b)` that returns the sum of two numbers.",
+  "tests": "import unittest\nfrom solution import add\n\nclass T(unittest.TestCase):\n    def test_ints(self):\n        self.assertEqual(add(2, 3), 5)\n    def test_neg(self):\n        self.assertEqual(add(-4, 10), 6)\n    def test_floats(self):\n        self.assertAlmostEqual(add(0.5, 0.25), 0.75)\n    def test_zero(self):\n        self.assertEqual(add(0, 0), 0)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

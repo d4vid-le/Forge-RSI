@@ -1,0 +1,42 @@
+{
+  "frozen_at": "2026-10-25T11:55:33",
+  "task_counts": {
+    "dev": 20,
+    "holdout": 10
+  },
+  "combined_sha256": "84a7a0e5b1d60116605d522614c92754d0c23f20c04fdc0a1bf713f7ad73dadb",
+  "files": {
+    "tasks/dev/dev_001.json": "8d7541d7c1abd4033959166f7b51b86f28a66a73ad2baabc77d106de97cd7aff",
+    "tasks/dev/dev_002.json": "819812bebbd65c078d37930f31dbbfa0c1b1b051d595f767499d8103a39ded2c",
+    "tasks/dev/dev_003.json": "025ff107c2e8a606955188d4a99d776d8613f8b05e6c3b804cc47ca59339e7d8",
+    "tasks/dev/dev_004.json": "351b21e36447c42cc7d1c3088ab53f222ce8e5ff995f938665948c0e2e686c3e",
+    "tasks/dev/dev_005.json": "8370c079632993257d94322f243237e89260ea3a37cd4d7aa33cc4c71854a589",
+    "tasks/dev/dev_006.json": "81ab88a6824c18b6241eace7fb682a5828e2428aeaf345f8fe3629500b1baa91",
+    "tasks/dev/dev_007.json": "14c063ee724777132778f569af7984ad7f1d8606f83528e059bf9a38b90c2b2e",
+    "tasks/dev/dev_008.json": "702c4c1a162b1e296bf5c047c0a05ac085021c66fc3654b585c21e166a432e3c",
+    "tasks/dev/dev_009.json": "22a1585adb8c7752f743f387f681aa75fc99038146106fa56370e7260a1f897c",
+    "tasks/dev/dev_010.json": "9c3be6b96d28f6a630630d03b1a0b37dc08a494f026aef1c0cab946318127ea6",
+    "tasks/dev/dev_011.json": "1538f6b44714bf257c60250d9b6354ea6dc61d1a541009e9af43f3ac516842ef",
+    "tasks/dev/dev_012.json": "f98c36a59f7528e520c5dd2f0cd1b830d33aa831971e1d377f28ea83b2601817",
+    "tasks/dev/dev_013.json": "c59036bb7ec6f53097a091b5d27e7d026c30ca1ed96448c103583f1125c75e92",
+    "tasks/dev/dev_014.json": "2d53993ee5c18a3b432b227ea300489a9489bfbf81ee79ff72808185299e56f2",
+    "tasks/dev/dev_015.json": "429e619ea7f680835e3197a5c9df93b1a7fb67e022931f221b7c9be159d99395",
+    "tasks/dev/dev_016.json": "0a43d760e3ac0c03644701b91abc98cb20f6e9a00e974e6e54c16f990d91e2eb",
+    "tasks/dev/dev_017.json": "a966134aecc2f7b5cf00db65a92638232b45a48756a48cfa7313ad17b6b2101d",
+    "tasks/dev/dev_018.json": "bec336c93b63ced08073075ee735c70e8d53c0c24e83cd6e3590e9ed40b2ce09",
+    "tasks/dev/dev_019.json": "6291f9e55ae74a4fe5cca7313d5e2e76162115f2456f90e277f32dda615532a5",
+    "tasks/dev/dev_020.json": "618ae15f309af75aa915c9b23330bdd77fb26afedefdd4a4a6c74f561d6e239b",
+    "tasks/holdout/hold_001.json": "cc654561e54a7e2aba1a57b3030b206135236931cd3482a0bae009a758e0b427",
+    "tasks/holdout/hold_002.json": "e340ee833f54f7a3fdda1f79cc1be4f8c93ca5b73ddb9e181abb8fdaf9e76da8",
+    "tasks/holdout/hold_003.json": "38cd776cba447da6f4d8795d92f2b614347270879fa44d40c38d03ff1bf72807",
+    "tasks/holdout/hold_004.json": "4209f071dbc694d25da8a2ac00235b18c4982f7f76ca1cca8137ea3c1a9aefad",
+    "tasks/holdout/hold_005.json": "a533071a319083e0c990a8a7dd4c75f41f33d88c82b61e257005196f0206ae65",
+    "tasks/holdout/hold_006.json": "e531f799fb536a33f004f9cc57a3a06079bb0067e02921317dec556c8d90ccfd",
+    "tasks/holdout/hold_007.json": "39b72878d9eec77cc41e3ae4fce8a0e61f1c8fa2a853e5899205d92144fbe980",
+    "tasks/holdout/hold_008.json": "e15af14700a3f39e737b97abf324a943b71b67a8dcdde4e03e8cc5b57fbb0c3a",
+    "tasks/holdout/hold_009.json": "9e9047f87e25abf67ff858e7a62edd1dc6e4b2f726c35ea0aed26a4df722f79f",
+    "tasks/holdout/hold_010.json": "83939f84a98da736699c0e45ea6909f2a6c25ca8e755820576b4e6559bc1c6f1",
+    "forge_rsi/verifier.py": "b92a734d8d4bc23c0c550cc558c2c4686b90195ff3c4f24834b54c3673e6aa9d",
+    "config.toml": "cb97213bea9e1a7e9b4521ad139024ddac74d19d0864e49ece3d2809d4dae306"
+  }
+}

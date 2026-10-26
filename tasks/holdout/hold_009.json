@@ -1,0 +1,12 @@
+{
+  "id": "hold_009",
+  "title": "snake_to_camel",
+  "prompt": "Write `snake_to_camel(s: str) -> str` converting a snake_case identifier to lowerCamelCase. Leading/trailing/duplicate underscores should be handled gracefully.",
+  "tests": "import unittest\nfrom solution import snake_to_camel\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(snake_to_camel(\"hello_world\"), \"helloWorld\")\n    def test_single(self):\n        self.assertEqual(snake_to_camel(\"abc\"), \"abc\")\n    def test_extra(self):\n        self.assertEqual(snake_to_camel(\"_a__b_\"), \"aB\")\n    def test_empty(self):\n        self.assertEqual(snake_to_camel(\"\"), \"\")",
+  "difficulty": "medium",
+  "tags": [
+    "strings"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

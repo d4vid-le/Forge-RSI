@@ -1,0 +1,10 @@
+{
+  "id": "dev_006",
+  "title": "factorial",
+  "prompt": "Write `factorial(n: int) -> int` returning n! for n >= 0. Raise `ValueError` if n is negative.",
+  "tests": "import unittest\nfrom solution import factorial\n\nclass T(unittest.TestCase):\n    def test_zero(self):\n        self.assertEqual(factorial(0), 1)\n    def test_five(self):\n        self.assertEqual(factorial(5), 120)\n    def test_one(self):\n        self.assertEqual(factorial(1), 1)\n    def test_negative(self):\n        with self.assertRaises(ValueError):\n            factorial(-1)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

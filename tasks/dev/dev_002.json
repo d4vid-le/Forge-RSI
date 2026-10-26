@@ -1,0 +1,10 @@
+{
+  "id": "dev_002",
+  "title": "is_even",
+  "prompt": "Write `is_even(n: int) -> bool` that returns True when n is even, False otherwise. It must work for negative integers too.",
+  "tests": "import unittest\nfrom solution import is_even\n\nclass T(unittest.TestCase):\n    def test_even(self):\n        self.assertTrue(is_even(4))\n    def test_odd(self):\n        self.assertFalse(is_even(7))\n    def test_negative(self):\n        self.assertTrue(is_even(-2))\n        self.assertFalse(is_even(-3))\n    def test_zero(self):\n        self.assertTrue(is_even(0))",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

@@ -1,0 +1,13 @@
+{
+  "id": "probe_wf_1",
+  "title": "count_words",
+  "prompt": "Write `count_words(text: str) -> dict` returning a dict mapping each lowercased whitespace-separated word to its count.",
+  "tests": "import unittest\nfrom solution import count_words\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(count_words(\"a b a\"), {\"a\": 2, \"b\": 1})\n    def test_case(self):\n        self.assertEqual(count_words(\"Hi hi HI\"), {\"hi\": 3})\n    def test_empty(self):\n        self.assertEqual(count_words(\"\"), {})\n    def test_punct(self):\n        self.assertEqual(count_words(\"a, a,\"), {\"a,\": 2})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "skill_probe",
+    "word_freq"
+  ],
+  "difficulty": "medium"
+}

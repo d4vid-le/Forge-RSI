@@ -1,0 +1,12 @@
+{
+  "id": "hold_007",
+  "title": "longest_common_prefix",
+  "prompt": "Write `longest_common_prefix(words: list) -> str` returning the longest common prefix of a list of strings. Return the empty string if there is none or the list is empty.",
+  "tests": "import unittest\nfrom solution import longest_common_prefix\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(longest_common_prefix([\"flower\", \"flow\", \"flight\"]), \"fl\")\n    def test_none(self):\n        self.assertEqual(longest_common_prefix([\"dog\", \"cat\"]), \"\")\n    def test_empty_list(self):\n        self.assertEqual(longest_common_prefix([]), \"\")\n    def test_single(self):\n        self.assertEqual(longest_common_prefix([\"abc\"]), \"abc\")",
+  "difficulty": "medium",
+  "tags": [
+    "strings"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

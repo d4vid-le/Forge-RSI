@@ -1,0 +1,12 @@
+{
+  "id": "hold_004",
+  "title": "rotate_list",
+  "prompt": "Write `rotate_right(nums: list, k: int) -> list` rotating the list right by k positions. k may be larger than the list length; an empty list stays empty.",
+  "tests": "import unittest\nfrom solution import rotate_right\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(rotate_right([1, 2, 3, 4], 1), [4, 1, 2, 3])\n    def test_large_k(self):\n        self.assertEqual(rotate_right([1, 2, 3], 4), [3, 1, 2])\n    def test_empty(self):\n        self.assertEqual(rotate_right([], 5), [])\n    def test_zero(self):\n        self.assertEqual(rotate_right([1, 2], 0), [1, 2])",
+  "difficulty": "medium",
+  "tags": [
+    "lists"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

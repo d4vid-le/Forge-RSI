@@ -1,0 +1,10 @@
+{
+  "id": "dev_010",
+  "title": "clamp",
+  "prompt": "Write `clamp(value, lo, hi)` returning value limited to the inclusive range [lo, hi].",
+  "tests": "import unittest\nfrom solution import clamp\n\nclass T(unittest.TestCase):\n    def test_inside(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_below(self):\n        self.assertEqual(clamp(-3, 0, 10), 0)\n    def test_above(self):\n        self.assertEqual(clamp(42, 0, 10), 10)\n    def test_bounds(self):\n        self.assertEqual(clamp(0, 0, 10), 0)\n        self.assertEqual(clamp(10, 0, 10), 10)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

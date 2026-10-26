@@ -1,0 +1,10 @@
+{
+  "id": "dev_009",
+  "title": "sum_digits",
+  "prompt": "Write `sum_digits(n: int) -> int` returning the sum of the decimal digits of n, ignoring the sign.",
+  "tests": "import unittest\nfrom solution import sum_digits\n\nclass T(unittest.TestCase):\n    def test_positive(self):\n        self.assertEqual(sum_digits(123), 6)\n    def test_negative(self):\n        self.assertEqual(sum_digits(-456), 15)\n    def test_zero(self):\n        self.assertEqual(sum_digits(0), 0)\n    def test_single(self):\n        self.assertEqual(sum_digits(9), 9)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

@@ -1,0 +1,12 @@
+{
+  "id": "hold_001",
+  "title": "gcd",
+  "prompt": "Write `gcd(a: int, b: int) -> int` returning the greatest common divisor of two non-negative integers. gcd(0, n) == n.",
+  "tests": "import unittest\nfrom solution import gcd\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(gcd(12, 18), 6)\n    def test_coprime(self):\n        self.assertEqual(gcd(7, 13), 1)\n    def test_zero(self):\n        self.assertEqual(gcd(0, 5), 5)\n    def test_equal(self):\n        self.assertEqual(gcd(9, 9), 9)",
+  "difficulty": "medium",
+  "tags": [
+    "math"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

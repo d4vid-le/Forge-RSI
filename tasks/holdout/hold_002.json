@@ -1,0 +1,12 @@
+{
+  "id": "hold_002",
+  "title": "prime_factors",
+  "prompt": "Write `prime_factors(n: int) -> list` returning the prime factors of n in ascending order, with repetition (e.g. 12 -> [2, 2, 3]). Raise `ValueError` for n < 2.",
+  "tests": "import unittest\nfrom solution import prime_factors\n\nclass T(unittest.TestCase):\n    def test_12(self):\n        self.assertEqual(prime_factors(12), [2, 2, 3])\n    def test_prime(self):\n        self.assertEqual(prime_factors(13), [13])\n    def test_power(self):\n        self.assertEqual(prime_factors(8), [2, 2, 2])\n    def test_invalid(self):\n        with self.assertRaises(ValueError):\n            prime_factors(1)",
+  "difficulty": "medium",
+  "tags": [
+    "math"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

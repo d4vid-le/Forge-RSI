@@ -1,0 +1,10 @@
+{
+  "id": "dev_004",
+  "title": "reverse_string",
+  "prompt": "Write `reverse_string(s: str) -> str` that returns the string reversed.",
+  "tests": "import unittest\nfrom solution import reverse_string\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(reverse_string(\"abc\"), \"cba\")\n    def test_empty(self):\n        self.assertEqual(reverse_string(\"\"), \"\")\n    def test_spaces(self):\n        self.assertEqual(reverse_string(\"a b\"), \"b a\")\n    def test_unicode(self):\n        self.assertEqual(reverse_string(\"ab\"), \"ba\")",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skillforge-rsi"
+version = "0.1.0"
+description = "A local-first frozen-base skill library with a measured RSI harness loop"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "David Le" }]
+dependencies = [
+  "mlx>=0.32",
+  "mlx-lm>=0.32",
+  "transformers>=4.40",
+]
+
+[project.optional-dependencies]
+pipeline = ["fastapi", "uvicorn", "python-multipart"]
+
+[project.scripts]
+forge-rsi = "forge_rsi.cli:main"
+
+[tool.setuptools]
+packages = ["forge_rsi", "pipeline"]
+
+[tool.setuptools.package-data]
+pipeline = ["ui/*"]

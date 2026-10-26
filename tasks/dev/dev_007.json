@@ -1,0 +1,10 @@
+{
+  "id": "dev_007",
+  "title": "fibonacci",
+  "prompt": "Write `fib(n: int) -> int` returning the n-th Fibonacci number with fib(0)=0 and fib(1)=1. Raise `ValueError` for n < 0.",
+  "tests": "import unittest\nfrom solution import fib\n\nclass T(unittest.TestCase):\n    def test_zero(self):\n        self.assertEqual(fib(0), 0)\n    def test_one(self):\n        self.assertEqual(fib(1), 1)\n    def test_ten(self):\n        self.assertEqual(fib(10), 55)\n    def test_negative(self):\n        with self.assertRaises(ValueError):\n            fib(-1)",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

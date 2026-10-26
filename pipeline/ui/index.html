@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SkillForge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#1e1e1e; --panel:#2d2d2d; --elev:#3a3a3a; --line:#454545;
+    --fg:#ffffff; --fg2:#8e8e93; --fg3:#636366;
+    --accent:#0a84ff; --ok:#30d158; --err:#ff453a; --warn:#ffd60a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;
+       font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button{font:inherit;background:var(--elev);color:var(--fg);border:1px solid var(--line);
+         border-radius:5px;padding:5px 10px;cursor:pointer}
+  button:hover:not(:disabled){border-color:#5a5a5a;background:#424242}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:disabled{background:#2a4a6a;border-color:#2a4a6a}
+  button.ok{background:rgba(48,209,88,.15);border-color:var(--ok);color:var(--ok)}
+  button.err{background:rgba(255,69,58,.15);border-color:var(--err);color:var(--err)}
+  input,select,textarea{font:inherit;background:#242424;color:var(--fg);
+        border:1px solid var(--line);border-radius:5px;padding:5px 8px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  header{height:46px;display:flex;align-items:center;gap:14px;padding:0 14px;
+         background:var(--panel);border-bottom:1px solid var(--line)}
+  .brand{font-weight:700;letter-spacing:.3px}
+  .brand span{color:var(--accent)}
+  .tabs{display:flex;gap:2px;background:#242424;border:1px solid var(--line);border-radius:7px;padding:2px}
+  .tabs button{background:transparent;border:none;color:var(--fg2);padding:4px 14px;border-radius:5px}
+  .tabs button.on{background:var(--accent);color:#fff;font-weight:600}
+  .spacer{flex:1}
+  .prog{display:flex;gap:12px;font-size:12px;font-variant-numeric:tabular-nums}
+  .views{height:calc(100vh - 46px)}
+  .view{display:none;height:100%}
+  .view.on{display:grid}
+  #view-data{grid-template-columns:330px 1fr 300px}
+  #view-forge{grid-template-columns:340px 1fr 330px}
+  #view-pg{grid-template-columns:320px 1fr 340px}
+  aside{background:var(--panel);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+  aside.l{border-right:1px solid var(--line)} aside.r{border-left:1px solid var(--line)}
+  main{overflow-y:auto;padding:16px}
+  section.card{background:var(--elev);border:1px solid var(--line);border-radius:7px;padding:10px}
+  section.card h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;
+                  color:var(--fg2);display:flex;align-items:center;gap:6px}
+  .row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .row>*{margin:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  label.f{display:block;font-size:10.5px;color:var(--fg3);margin:0 0 2px 2px;
+          text-transform:uppercase;letter-spacing:.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;
+        font-size:12px;color:var(--fg2)}
+  .meta .id{font-family:var(--mono);color:var(--fg)}
+  .chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;
+        background:var(--elev);border:1px solid var(--line);color:var(--fg2);cursor:pointer}
+  .chip:hover{border-color:var(--accent);color:var(--fg)}
+  .chip.bad{border-color:var(--err);color:var(--err);background:rgba(255,69,58,.1)}
+  .chip.warn{border-color:var(--warn);color:var(--warn);background:rgba(255,214,10,.1)}
+  .chip.ok{border-color:var(--ok);color:var(--ok);background:rgba(48,209,88,.1)}
+  .msg{border-left:3px solid var(--line);background:#262626;border-radius:0 6px 6px 0;
+       padding:9px 12px;margin-bottom:9px;white-space:pre-wrap;word-break:break-word;
+       font-family:var(--mono);font-size:12.5px;max-height:44vh;overflow:auto}
+  .msg.system{border-color:#8e8e93} .msg.user{border-color:var(--accent)}
+  .msg.assistant{border-color:var(--ok)} .msg.tool{border-color:var(--warn)}
+  .role{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--fg3);margin-bottom:4px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .diff{background:#232323;border:1px dashed var(--line);border-radius:6px;padding:10px;margin-bottom:10px}
+  .diff .msg{background:#1b1b1b;opacity:.75;max-height:22vh}
+  .kbd{font-family:var(--mono);background:#1a1a1a;border:1px solid var(--line);
+       border-radius:4px;padding:1px 6px;font-size:11px;color:var(--fg2)}
+  .empty{color:var(--fg3);text-align:center;margin-top:80px;line-height:2}
+  .log{font-family:var(--mono);font-size:11.5px;color:var(--fg2);white-space:pre-wrap;
+       max-height:200px;overflow:auto;background:#242424;border:1px solid var(--line);
+       border-radius:5px;padding:8px;margin-top:6px}
+  .bar{height:5px;border-radius:3px;background:#1a1a1a;overflow:hidden;display:flex}
+  .bar i{display:block;height:100%}
+  .hint{font-size:11px;color:var(--fg3);margin-top:5px}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)}
+  table td,table th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;
+                    vertical-align:top;word-break:break-all}
+  table th{color:var(--fg3);font-weight:500;text-transform:uppercase;font-size:10px}
+  .drop{border:1px dashed var(--line);border-radius:7px;padding:14px;text-align:center;
+        color:var(--fg3);font-size:12px}
+  .drop.hot{border-color:var(--accent);color:var(--accent);background:rgba(10,132,255,.07)}
+  a{color:var(--accent)}
+  .pill{font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--fg2)}
+  .pill.acc{color:var(--ok);border-color:var(--ok)} .pill.rej{color:var(--err);border-color:var(--err)}
+  .pill.run{color:var(--warn);border-color:var(--warn)}
+  .kv{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:11.5px;
+      border-bottom:1px solid #3a3a3a}
+  .kv span:first-child{color:var(--fg3)} .kv span:last-child{font-family:var(--mono)}
+  .scroll{max-height:230px;overflow:auto}
+  .banner{border-radius:6px;padding:9px 11px;font-size:12px;margin-bottom:10px;border:1px solid}
+  .banner.warn{border-color:var(--warn);background:rgba(255,214,10,.08);color:var(--warn)}
+  .banner.err{border-color:var(--err);background:rgba(255,69,58,.08);color:var(--err)}
+  .banner.ok{border-color:var(--ok);background:rgba(48,209,88,.08);color:var(--ok)}
+  .chat{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+  .say{max-width:82%;padding:8px 11px;border-radius:10px;white-space:pre-wrap;font-size:12.5px}
+  .say.u{align-self:flex-end;background:#0a84ff22;border:1px solid #0a84ff55}
+  .say.a{align-self:flex-start;background:#2a2a2a;border:1px solid var(--line)}
+  .say .t{display:block;font-size:10px;color:var(--fg3);margin-top:5px;font-family:var(--mono)}
+  svg.spark{width:100%;height:70px;background:#242424;border:1px solid var(--line);border-radius:5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Skill<span>Forge</span></div>
+  <div class="tabs">
+    <button id="tab-data" class="on" onclick="setMode('data')">Data</button>
+    <button id="tab-forge" onclick="setMode('forge')">Forge</button>
+    <button id="tab-pg" onclick="setMode('playground')">Playground</button>
+  </div>
+  <select id="sessionSel" style="max-width:280px"></select>
+  <span id="sessName" class="hint" style="margin:0"></span>
+  <div class="spacer"></div>
+  <div class="prog" id="prog"></div>
+  <button onclick="showHelp()">? keys</button>
+</header>
+
+<div class="views">
+
+  <!-- ══════════════════ DATA ══════════════════ -->
+  <div id="view-data" class="view on">
+    <aside class="l">
+      <section class="card">
+        <h3>Import</h3>
+        <div class="row"><input id="impPaths" placeholder="path, glob, or folder (one per line)"></div>
+        <div class="row"><input id="impDomain" placeholder="domain (optional)"></div>
+        <div class="row"><input id="impName" placeholder="session name (optional)"></div>
+        <div class="row">
+          <label style="font-size:11.5px;color:var(--fg2)"><input type="checkbox" id="impStrict" style="width:auto"> strict tools</label>
+          <label style="font-size:11.5px;color:var(--fg2)"><input type="checkbox" id="impRaw" style="width:auto"> keep raw text</label>
+        </div>
+        <button class="primary" style="width:100%" onclick="doImport()">Import files</button>
+        <div class="drop" id="drop" style="margin-top:8px">drop .json / .jsonl here</div>
+      </section>
+      <section class="card">
+        <h3>Filters</h3>
+        <div class="row"><select id="fDecision" onchange="applyFilters()">
+          <option value="pending">pending only</option><option value="">all decisions</option>
+          <option value="accepted">accepted</option><option value="rejected">rejected</option>
+          <option value="edited">edited</option></select></div>
+        <div class="row"><select id="fFlag" onchange="applyFilters()"></select></div>
+        <div class="row"><select id="fDomain" onchange="applyFilters()"></select></div>
+        <div class="row"><select id="fSchema" onchange="applyFilters()"></select></div>
+        <div class="row"><input id="fQ" placeholder="search text…" oninput="debouncedFilters()"></div>
+      </section>
+      <section class="card">
+        <h3>Flags in this session</h3>
+        <div id="flagList" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+        <div class="hint">click to filter</div>
+      </section>
+      <section class="card">
+        <h3>Bulk</h3>
+        <div class="row"><button style="flex:1" onclick="bulk('all_clean')">Accept all clean</button></div>
+        <div class="row"><button style="flex:1" onclick="bulk('reset')">Reset rejected → pending</button></div>
+      </section>
+    </aside>
+    <main id="main"><div class="empty">Select a session, or import data to begin.</div></main>
+    <aside class="r">
+      <section class="card"><h3>Progress</h3><div class="bar" id="bar"></div><div id="progText" class="hint"></div></section>
+      <section class="card">
+        <h3>Export</h3>
+        <div class="row"><select id="exInclude">
+          <option value="accepted">accepted + edited</option>
+          <option value="clean">accepted + clean pending</option>
+          <option value="all">everything not rejected</option></select></div>
+        <div class="row"><select id="exFormat">
+          <option value="messages">messages (mlx-lm)</option>
+          <option value="chatml">chatml text</option>
+          <option value="both" selected>both</option></select></div>
+        <div class="row"><select id="exSort">
+          <option value="domain">sort: domain</option><option value="tokens">sort: tokens</option>
+          <option value="source">sort: source</option><option value="none">sort: none</option></select></div>
+        <button class="primary" style="width:100%" onclick="doExport()">Export clean file</button>
+        <div class="log" id="exLog" style="display:none"></div>
+      </section>
+      <section class="card"><h3>Quarantine <span id="qCount" class="pill"></span></h3>
+        <button style="width:100%" onclick="loadQuarantine()">Show unparseable rows</button>
+        <div id="qBox"></div></section>
+      <section class="card"><h3>Log</h3><div class="log" id="log">ready</div></section>
+    </aside>
+  </div>
+
+  <!-- ══════════════════ FORGE ══════════════════ -->
+  <div id="view-forge" class="view">
+    <aside class="l">
+      <section class="card">
+        <h3>Environment</h3>
+        <div id="envBox"><div class="hint">checking…</div></div>
+      </section>
+      <section class="card">
+        <h3>Base model (R1 lock)</h3>
+        <div class="row"><select id="fgModel" onchange="loadLock()"></select></div>
+        <div id="lockBox"><div class="hint">select a model</div></div>
+        <div class="row" style="margin-top:6px">
+          <button style="flex:1" onclick="loadLock(true)">Verify checksums</button>
+        </div>
+        <div class="hint">slow on 30 GB the first time; cached until a file changes</div>
+      </section>
+      <section class="card">
+        <h3>Adapters</h3>
+        <div id="adapterBox" class="scroll"><div class="hint">none</div></div>
+      </section>
+    </aside>
+
+    <main>
+      <section class="card" style="margin-bottom:12px">
+        <h3>1 · Dataset</h3>
+        <div class="grid2">
+          <div><label class="f">from session</label><select id="fgSession"></select></div>
+          <div><label class="f">include</label><select id="fgInclude">
+            <option value="accepted">accepted + edited</option>
+            <option value="clean">accepted + clean pending</option>
+            <option value="all">everything not rejected</option></select></div>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">run name</label><input id="fgRunName" value="skill_run_1"></div>
+          <div><label class="f">valid ratio</label><input id="fgValid" value="0.05"></div>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">max seq length</label><input id="fgMaxSeqD" value="2048"></div>
+          <div><label class="f">seed</label><input id="fgSeed" value="0"></div>
+        </div>
+        <div class="actions">
+          <button class="primary" onclick="fgPrepare()">Prepare train/valid</button>
+          <label style="font-size:11.5px;color:var(--fg2);align-self:center">
+            <input type="checkbox" id="fgAllowFlagged" style="width:auto"> allow gated rows</label>
+        </div>
+        <div id="prepBox"></div>
+      </section>
+
+      <section class="card" style="margin-bottom:12px">
+        <h3>2 · LoRA config <span class="pill" id="scalePill"></span></h3>
+        <div class="grid2">
+          <div><label class="f">rank (R6: fixed 8)</label><input id="fgRank" value="8" oninput="updScale()"></div>
+          <div><label class="f">alpha</label><input id="fgAlpha" value="16" oninput="updScale()"></div>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">layers (last N)</label><input id="fgLayers" value="6"></div>
+          <div><label class="f">learning rate</label><input id="fgLr" value="0.0001"></div>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">iters</label><input id="fgIters" value="100"></div>
+          <div><label class="f">batch size</label><input id="fgBatch" value="1"></div>
+        </div>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">grad accumulation</label><input id="fgGrad" value="4"></div>
+          <div><label class="f">save every</label><input id="fgSave" value="50"></div>
+        </div>
+        <div class="actions">
+          <label style="font-size:11.5px;color:var(--fg2)"><input type="checkbox" id="fgMask" checked style="width:auto"> mask prompt</label>
+          <label style="font-size:11.5px;color:var(--fg2)"><input type="checkbox" id="fgGCk" style="width:auto"> grad checkpoint</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>3 · Run</h3>
+        <div class="actions" style="margin:0 0 8px">
+          <button class="primary" id="fgRunBtn" onclick="fgTrain()">Start training</button>
+          <button onclick="fgPreview()">Preview command</button>
+          <button class="err" onclick="fgStop()">Stop</button>
+          <button onclick="fgRefreshRun()">Refresh</button>
+        </div>
+        <div id="runBox"><div class="hint">no run yet — this panel shows real mlx_lm output only</div></div>
+      </section>
+    </main>
+
+    <aside class="r">
+      <section class="card"><h3>Runs</h3><div id="runsBox" class="scroll"><div class="hint">none yet</div></div></section>
+      <section class="card"><h3>Command</h3><div class="log" id="cmdBox">prepare a dataset, then start a run</div></section>
+    </aside>
+  </div>
+
+  <!-- ══════════════════ PLAYGROUND ══════════════════ -->
+  <div id="view-pg" class="view">
+    <aside class="l">
+      <section class="card">
+        <h3>Endpoints</h3>
+        <div id="epBox"><div class="hint">probing…</div></div>
+        <button style="width:100%;margin-top:6px" onclick="pgLoad()">Re-scan</button>
+      </section>
+      <section class="card">
+        <h3>Model</h3>
+        <div class="row"><select id="pgModel"></select></div>
+        <div class="row"><select id="pgEndpoint"></select></div>
+        <div class="hint">Ollama answers on 11434. To test a trained adapter, start an
+          mlx_lm.server with that adapter below.</div>
+      </section>
+      <section class="card">
+        <h3>mlx_lm.server</h3>
+        <div class="row"><select id="pgSrvModel"></select></div>
+        <div class="row"><select id="pgSrvAdapter"></select></div>
+        <div class="grid2">
+          <div><label class="f">port</label><input id="pgSrvPort" value="8080"></div>
+          <div style="align-self:end"><button style="width:100%" onclick="pgServerStart()">Start</button></div>
+        </div>
+        <div class="actions"><button onclick="pgServerStop()">Stop</button>
+          <button onclick="pgServerStatus()">Status</button></div>
+        <div id="srvBox"></div>
+      </section>
+    </aside>
+
+    <main>
+      <section class="card" style="margin-bottom:12px">
+        <h3>System prompt</h3>
+        <textarea id="pgSystem" rows="3" placeholder="optional system message"></textarea>
+        <div class="grid2" style="margin-top:6px">
+          <div><label class="f">temperature</label><input id="pgTemp" value="0.0"></div>
+          <div><label class="f">max tokens</label><input id="pgMax" value="512"></div>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Chat <span class="hint" id="pgStatus" style="margin:0"></span></h3>
+        <div class="chat" id="pgChat"></div>
+        <textarea id="pgPrompt" rows="3" placeholder="Ask something…  (⌘↵ to send)"></textarea>
+        <div class="actions">
+          <button class="primary" onclick="pgSend()">Send</button>
+          <button onclick="pgClear()">Clear</button>
+          <span class="hint" id="pgMetrics" style="align-self:center"></span>
+        </div>
+      </section>
+    </main>
+
+    <aside class="r">
+      <section class="card">
+        <h3>Robustness probe (R3)</h3>
+        <div class="grid2">
+          <div><label class="f">samples</label><input id="prN" value="6"></div>
+          <div><label class="f">temperature</label><input id="prT" value="0.3"></div>
+        </div>
+        <button class="primary" style="width:100%;margin-top:6px" onclick="pgProbe()">Run probe</button>
+        <div class="hint">1 greedy sample + N at temperature, agreement measured on the
+          real outputs with a Wilson interval</div>
+        <div id="prBox"></div>
+      </section>
+      <section class="card"><h3>Log</h3><div class="log" id="pgLog">ready</div></section>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s??"").replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const FLAG_ORDER = ["tool_calls_removed","orphan_observation","bad_tool_json","secret","secret_masked",
+  "hostpath","duplicate_exact","duplicate_normalized","placeholder_json","mojibake","lone_surrogate",
+  "oversize","short","no_assistant_turn","turn_emptied_by_removal","tool_calls_repaired",
+  "think_stray_close","think_unclosed","internal_tool","unknown_tool"];
+const S = {mode:"data", session:null, rows:[], idx:0, counts:{}, showDiff:false, editing:false,
+           hot:[], forge:null, lock:null, run:null, pgChat:[], runTimer:null, pgTimer:null};
+
+async function api(p,o){ const r=await fetch(p,o); const j=await r.json().catch(()=>({ok:false,error:r.statusText}));
+  if(!j.ok && j.error) throw new Error(j.error); return j; }
+const post=(p,b)=>api(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+function log(msg,el){ el=el||"#log"; const l=$(el); if(!l) return;
+  l.textContent=new Date().toLocaleTimeString()+"  "+msg+"\n"+l.textContent.split("\n").slice(0,14).join("\n"); }
+
+/* ── modes ─────────────────────────────────────────────────────────────── */
+const VIEW_ID = {data:"view-data", forge:"view-forge", playground:"view-pg"};
+const TAB_ID  = {data:"tab-data",  forge:"tab-forge",  playground:"tab-pg"};
+function setMode(m){
+  if(!VIEW_ID[m]) m = "data";
+  S.mode=m;
+  for(const [mode,id] of Object.entries(VIEW_ID)){
+    const el=$("#"+id);
+    if(el) el.classList.toggle("on", mode===m);
+  }
+  for(const [mode,id] of Object.entries(TAB_ID)){
+    const el=$("#"+id); if(el) el.classList.toggle("on", mode===m);
+  }
+  $("#sessionSel").style.display = m==="data" ? "" : "none";
+  $("#prog").style.display = m==="data" ? "" : "none";
+  localStorage.setItem("sf_mode", m);
+  if(m==="forge") fgLoad();
+  if(m==="playground") pgLoad();
+}
+function showHelp(){ alert(["SkillForge",
+  "Tabs: Data → review data · Forge → train · Playground → test",
+  "",
+  "Data keys:  a accept · r reject · e edit · u reset · d diff",
+  "            n/→ next · p/← prev · f search · 1-9 flag filter",
+  "",
+  "⌘↵ sends a chat message"].join("\n")); }
+
+/* ═══════════════ DATA ═══════════════ */
+async function loadSessions(){
+  const {sessions}=await api("/api/sessions");
+  const sel=$("#sessionSel"); sel.innerHTML = sessions.length?"":'<option value="">no sessions yet</option>';
+  for(const s of sessions){ const o=document.createElement("option"); const st=JSON.parse(s.stats||"{}");
+    o.value=s.id; o.textContent=`${s.id} · ${(st.rows_kept||0).toLocaleString()} rows`;
+    if(S.session===s.id)o.selected=true; sel.appendChild(o); }
+  if(!S.session && sessions.length){ S.session=sessions[0].id; sel.value=S.session;
+    await selectSession(S.session); return; }
+  if(S.session) await selectSession(S.session); else render();
+}
+async function selectSession(id){
+  S.session=id; S.idx=0; S.rows=[]; $("#sessionSel").value=id;
+  const {session}=await api("/api/session?session="+encodeURIComponent(id));
+  S.counts=session.counts||{}; $("#sessName").textContent = session.name&&session.name!==id?session.name:"";
+  buildFilterOptions(); renderProgress(); applyFilters();
+}
+function buildFilterOptions(){
+  const fill=(sel,items,label)=>{ const cur=sel.value; sel.innerHTML=`<option value="">${label}: all</option>`;
+    for(const i of items){const o=document.createElement("option");o.value=i;o.textContent=i;sel.appendChild(o);} sel.value=cur; };
+  fill($("#fDomain"),Object.keys(S.counts.by_domain||{}),"domain");
+  fill($("#fSchema"),Object.keys(S.counts.by_schema||{}),"schema");
+  const flags=Object.keys(S.counts.by_flag||{}).sort((a,b)=>FLAG_ORDER.indexOf(a)-FLAG_ORDER.indexOf(b));
+  const ff=$("#fFlag"); ff.innerHTML='<option value="">flag: none</option>';
+  for(const f of flags){const o=document.createElement("option");o.value=f;
+    o.textContent=`${f} (${S.counts.by_flag[f]})`;ff.appendChild(o);}
+  const fl=$("#flagList"); fl.innerHTML="";
+  for(const f of flags){ const b=document.createElement("span");
+    b.className="chip "+(/secret|tool_json|orphan|placeholder|emptied/.test(f)?"bad":
+                        /oversize|think|unknown|internal|duplicate/.test(f)?"warn":"");
+    b.textContent=`${f} ${S.counts.by_flag[f]}`;
+    b.onclick=()=>{$("#fFlag").value=f;$("#fDecision").value="";applyFilters();}; fl.appendChild(b); }
+  $("#qCount").textContent=Object.values(S.counts.quarantine||{}).reduce((a,b)=>a+b,0)+" rows";
+}
+let fTimer=null; function debouncedFilters(){clearTimeout(fTimer);fTimer=setTimeout(applyFilters,250);}
+async function applyFilters(){ S.idx=0;S.rows=[]; await fetchRows(0); render(); }
+async function fetchRows(offset){
+  const q=new URLSearchParams({session:S.session,offset,limit:50});
+  const d=$("#fDecision").value; if(d)q.set("decision",d);
+  const f=$("#fFlag").value; if(f)q.set("flag",f);
+  const dm=$("#fDomain").value; if(dm)q.set("domain",dm);
+  const sc=$("#fSchema").value; if(sc)q.set("schema",sc);
+  const s=$("#fQ").value.trim(); if(s)q.set("q",s);
+  const {rows}=await api("/api/rows?"+q);
+  S.rows = offset===0?rows:S.rows.concat(rows); return rows.length;
+}
+async function ensureQueue(){ if(S.idx>=S.rows.length-5&&S.rows.length>0) await fetchRows(S.rows.length); }
+function renderProgress(){
+  const c=S.counts.by_decision||{}, total=S.counts.total||0;
+  const acc=(c.accepted||0)+(c.edited||0), rej=c.rejected||0, pend=c.pending||0;
+  $("#prog").innerHTML=`<span style="color:var(--ok)">kept <b>${acc.toLocaleString()}</b></span>
+    <span style="color:var(--err)">rejected <b>${rej.toLocaleString()}</b></span>
+    <span style="color:var(--fg2)">pending <b>${pend.toLocaleString()}</b></span>`;
+  const p=n=>total?n/total*100:0;
+  $("#bar").innerHTML=`<i style="width:${p(acc)}%;background:var(--ok)"></i>
+    <i style="width:${p(rej)}%;background:var(--err)"></i><i style="width:${p(pend)}%;background:#555"></i>`;
+  $("#progText").textContent=`${acc+rej} of ${total.toLocaleString()} reviewed · queue ${S.rows.length}`;
+}
+function render(){
+  renderProgress();
+  const main=$("#main");
+  if(!S.session){main.innerHTML='<div class="empty">Select a session, or import data to begin.</div>';return;}
+  if(!S.rows.length){main.innerHTML='<div class="empty">Nothing matches this filter.</div>';return;}
+  if(S.idx>=S.rows.length)S.idx=S.rows.length-1;
+  const r=S.rows[S.idx];
+  if(S.editing) return renderEdit(r);
+  const chips=r.flags.map(f=>`<span class="chip ${/secret|tool_json|orphan|placeholder|emptied/.test(f)?"bad":
+      /oversize|think|unknown|internal|duplicate/.test(f)?"warn":"ok"}" onclick="filterFlag('${f}')">${f}</span>`).join("")
+      || '<span class="chip ok">clean</span>';
+  const dec=r.decision==="accepted"?'<span class="pill acc">accepted</span>':
+            r.decision==="rejected"?'<span class="pill rej">rejected</span>':
+            r.decision==="edited"?'<span class="pill acc">edited</span>':'<span class="pill">pending</span>';
+  const msgs=r.messages.map(m=>`<div class="msg ${esc(m.role)}"><div class="role">${esc(m.role)}</div>${esc(m.content)}</div>`).join("");
+  const orig=(S.showDiff&&r.original&&JSON.stringify(r.original)!==JSON.stringify(r.messages))
+    ?`<div class="diff"><div class="role">before cleaning</div>${r.original.map(m=>
+      `<div class="msg ${esc(m.role)}"><div class="role">${esc(m.role)}</div>${esc(m.content)}</div>`).join("")}</div>`:"";
+  main.innerHTML=`
+    <div class="meta"><span class="id">#${r.id}</span> ${dec}
+      <span>${esc(r.source_file)}:${r.source_line}</span><span>· ${esc(r.domain)}</span>
+      <span>· ${esc(r.schema)}</span><span>· ${(r.est_tokens||0).toLocaleString()} tok</span>
+      <span class="spacer" style="flex:1"></span><span class="hint">${S.idx+1} / ${S.rows.length}</span></div>
+    <div class="meta">${chips}</div>${orig}${msgs}
+    <div class="actions">
+      <button class="ok" onclick="decide('accepted')">Accept <span class="kbd">a</span></button>
+      <button class="err" onclick="decide('rejected')">Reject <span class="kbd">r</span></button>
+      <button onclick="startEdit()">Edit <span class="kbd">e</span></button>
+      <button onclick="resetRow()">Reset <span class="kbd">u</span></button>
+      <button onclick="toggleDiff()">${S.showDiff?"Hide":"Show"} diff <span class="kbd">d</span></button>
+      <button onclick="move(1)">Next <span class="kbd">→</span></button>
+      <button onclick="move(-1)">Prev <span class="kbd">←</span></button></div>`;
+}
+function renderEdit(r){
+  $("#main").innerHTML=`<div class="meta"><span class="id">#${r.id}</span> editing
+    <span class="spacer" style="flex:1"></span><span class="hint">${S.idx+1} / ${S.rows.length}</span></div>`+
+    r.messages.map((m,i)=>`<div class="row"><span class="pill" style="min-width:74px;text-align:center">${esc(m.role)}</span>
+      <textarea rows="6" id="ed${i}">${esc(m.content)}</textarea></div>`).join("")+
+    `<div class="actions"><button class="primary" onclick="saveEdit()">Save edit <span class="kbd">⌘S</span></button>
+      <button onclick="S.editing=false;render()">Cancel</button></div>`;
+}
+function startEdit(){S.editing=true;render();}
+async function saveEdit(){
+  const r=S.rows[S.idx];
+  const msgs=r.messages.map((m,i)=>({role:m.role,content:$("#ed"+i).value}));
+  const {row,counts}=await post("/api/edit",{id:r.id,messages:msgs});
+  Object.assign(r,{messages:row.messages,flags:row.flags,decision:row.decision,edited:true});
+  S.counts=counts;S.editing=false;log(`edited #${r.id}`);render();
+}
+function toggleDiff(){S.showDiff=!S.showDiff;render();}
+function filterFlag(f){$("#fFlag").value=f;$("#fDecision").value="";applyFilters();}
+async function decide(decision){
+  const r=S.rows[S.idx]; if(!r)return; r.decision=decision;
+  try{ const {counts}=await post("/api/decide",{ids:[r.id],session:S.session,decision}); if(counts)S.counts=counts; }
+  catch(e){ log("decide failed: "+e.message); }
+  const df=$("#fDecision").value;
+  if((df==="pending"&&decision!=="pending")||(df==="accepted"&&decision!=="accepted")){
+    S.rows.splice(S.idx,1); if(S.idx>=S.rows.length)S.idx=Math.max(0,S.rows.length-1);
+  } else S.idx=Math.min(S.idx+1,S.rows.length-1);
+  render(); ensureQueue();
+}
+async function resetRow(){ const r=S.rows[S.idx]; r.decision="pending";
+  const {counts}=await post("/api/decide",{ids:[r.id],session:S.session,decision:"pending"});
+  if(counts)S.counts=counts; render(); }
+function move(d){S.idx=Math.max(0,Math.min(S.rows.length-1,S.idx+d));render();ensureQueue();}
+async function bulk(action){ const {affected,counts}=await post("/api/bulk",
+  {session:S.session,action,flag:$("#fFlag").value});
+  S.counts=counts; log(`bulk ${action}: ${affected} rows`); applyFilters(); }
+async function doImport(){
+  const paths=$("#impPaths").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if(!paths.length&&!S.hot.length){log("nothing to import");return;}
+  log(`importing…`);
+  try{ const res=await post("/api/import",{paths,files:S.hot,
+      domain:$("#impDomain").value.trim()||null,session_name:$("#impName").value.trim()||null,
+      strict_tools:$("#impStrict").checked,keep_raw_text:$("#impRaw").checked});
+    S.session=res.session;S.hot=[];updateDrop();
+    log(`imported ${res.summary.rows_kept} rows, ${res.summary.quarantined} quarantined`);
+    await loadSessions();
+  }catch(e){log("import failed: "+e.message);}
+}
+async function doExport(){
+  const el=$("#exLog");el.style.display="block";el.textContent="exporting…";
+  try{ const {manifest}=await post("/api/export",{session:S.session,include:$("#exInclude").value,
+      format:$("#exFormat").value,sort:$("#exSort").value});
+    const v=manifest.validation||{};
+    el.textContent=`file: ${manifest.file}\nrows: ${manifest.rows.toLocaleString()}`+
+      (manifest.duplicates_removed?` (dupes removed ${manifest.duplicates_removed})`:"")+
+      `\nsha256: ${manifest.sha256.slice(0,16)}…\n`+(v.passed?"hard gates: PASSED":
+      "hard gates: FAILED\n"+JSON.stringify(v.violations))+
+      `\nreport: ${manifest.report}\nrejected: ${manifest.rejected_bundle||"—"}`;
+    log("export complete: "+manifest.rows+" rows");
+  }catch(e){el.textContent="export failed: "+e.message;}
+}
+async function loadQuarantine(){
+  const {rows}=await api("/api/quarantine?session="+encodeURIComponent(S.session)+"&limit=200");
+  $("#qBox").innerHTML=rows.length?`<table>${rows.map(r=>`<tr><td>${esc(r.source_file)}:${r.source_line}</td>
+    <td>${esc(r.reason)}</td></tr>`).join("")}</table>`:'<div class="hint">empty</div>';
+}
+function updateDrop(){ $("#drop").innerHTML=S.hot.length?`${S.hot.length} file(s): ${S.hot.map(f=>esc(f.name)).join(", ")}`
+  :'drop .json / .jsonl here'; }
+["dragenter","dragover"].forEach(e=>$("#drop").addEventListener(e,ev=>{ev.preventDefault();$("#drop").classList.add("hot");}));
+["dragleave","drop"].forEach(e=>$("#drop").addEventListener(e,ev=>{ev.preventDefault();$("#drop").classList.remove("hot");}));
+$("#drop").addEventListener("drop",async ev=>{
+  const files=[...ev.dataTransfer.files].filter(f=>/\.jsonl?$/.test(f.name));
+  S.hot=await Promise.all(files.map(async f=>({name:f.name,text:await f.text()}))); updateDrop(); });
+
+/* ═══════════════ FORGE ═══════════════ */
+async function fgLoad(){
+  try{
+    const d=await api("/api/forge/status"); S.forge=d;
+    $("#envBox").innerHTML=
+      kv("mlx",d.mlx.mlx||"missing")+kv("mlx_lm",d.mlx.mlx_lm||"missing")+
+      kv("lora cli",d.mlx.lora_cli?"found":"MISSING")+kv("python",d.mlx.python);
+    if(!d.mlx.lora_cli){
+      $("#envBox").innerHTML+='<div class="banner err" style="margin-top:8px">mlx_lm.lora not found — training is disabled rather than simulated.</div>';
+    }
+    const ms=$("#fgModel"); ms.innerHTML="";
+    for(const m of d.models){ const o=document.createElement("option"); o.value=m.id;
+      o.textContent=`${m.label} · ${m.size_gb} GB`; ms.appendChild(o); }
+    const sm=$("#pgSrvModel"); sm.innerHTML="";
+    for(const m of d.models){ const o=document.createElement("option"); o.value=m.id; o.textContent=m.id; sm.appendChild(o); }
+    const sa=$("#pgSrvAdapter"); sa.innerHTML='<option value="">(base only)</option>';
+    for(const a of d.adapters){ const o=document.createElement("option"); o.value=a.path;
+      o.textContent=a.name+(a.format==="mlx_lm"?" ✓":" ["+a.format+"]"); sa.appendChild(o); }
+    $("#adapterBox").innerHTML = d.adapters.length? `<table><tr><th>name</th><th>fmt</th><th>r/scale</th></tr>`+
+      d.adapters.map(a=>`<tr><td>${esc(a.name)}<div class="hint">${a.size_mb} MB · ${esc(a.modified||"")}</div></td>
+        <td>${esc(a.format)}</td><td>${a.rank??"?"}/${a.scale??"?"}</td></tr>`).join("")+`</table>`:'<div class="hint">none</div>';
+    renderRuns(d.runs);
+    $("#fgSession").innerHTML=$("#sessionSel").innerHTML;
+    if(S.session)$("#fgSession").value=S.session;
+    updScale(); loadLock();
+  }catch(e){ log("forge load failed: "+e.message, "#cmdBox"); }
+}
+const kv=(k,v)=>`<div class="kv"><span>${esc(k)}</span><span>${esc(String(v))}</span></div>`;
+function updScale(){
+  const r=parseFloat($("#fgRank").value||8), a=parseFloat($("#fgAlpha").value||16);
+  $("#scalePill").textContent = r?`scale ${(a/r).toFixed(3)} = α/rank`:"rank must be > 0";
+}
+async function loadLock(verify){
+  const model=$("#fgModel").value; if(!model)return;
+  $("#lockBox").innerHTML='<div class="hint">'+(verify?"hashing files (slow first time)…":"checking…")+'</div>';
+  try{ const {lock}=await api(`/api/forge/base-lock?model=${encodeURIComponent(model)}&verify=${verify?1:0}`);
+    S.lock=lock;
+    const cls = lock.verified===true?"ok":lock.verified===false?"err":"warn";
+    $("#lockBox").innerHTML = lock.files.length
+      ? `<div class="banner ${cls}">${lock.verified?"base lock verified — all files match":"MISMATCH"}</div>`+
+        `<div class="scroll"><table>${lock.files.map(f=>`<tr><td>${esc(f.file)}</td>
+          <td style="color:${f.status==="match"?"var(--ok)":"var(--err)"}">${f.status}</td>
+          <td>${esc(f.expected||"")}</td></tr>`).join("")}</table></div>`
+      : `<div class="hint">${esc(lock.note)}</div>`;
+  }catch(e){ $("#lockBox").innerHTML=`<div class="banner err">${esc(e.message)}</div>`; }
+}
+async function fgPrepare(){
+  const run_name=$("#fgRunName").value.trim();
+  $("#prepBox").innerHTML='<div class="hint">preparing…</div>';
+  try{ const r=await post("/api/forge/prepare",{session:$("#fgSession").value||S.session,
+      run_name, include:$("#fgInclude").value, valid_ratio:parseFloat($("#fgValid").value||0.05),
+      seed:parseInt($("#fgSeed").value||0), max_tokens:parseInt($("#fgMaxSeqD").value||2048),
+      allow_flagged:$("#fgAllowFlagged").checked});
+    $("#prepBox").innerHTML=`<div class="banner ok">train ${r.train} rows · valid ${r.valid} rows
+      · ${r.est_tokens.toLocaleString()} est tokens<div class="hint">${esc(r.run_dir)}</div></div>`;
+    log(`prepared ${run_name}: ${r.train} train / ${r.valid} valid`,"#cmdBox");
+    fgRuns();
+  }catch(e){ $("#prepBox").innerHTML=`<div class="banner err">${esc(e.message)}</div>`; }
+}
+async function fgRuns(){
+  try{ const d=await api("/api/forge/status"); S.forge=d; renderRuns(d.runs); }catch(e){}
+}
+async function fgPreview(){
+  const body={run_name:$("#fgRunName").value.trim(), model:$("#fgModel").value, dry_run:true,
+    rank:parseInt($("#fgRank").value),alpha:parseInt($("#fgAlpha").value),
+    num_layers:parseInt($("#fgLayers").value),learning_rate:parseFloat($("#fgLr").value),
+    iters:parseInt($("#fgIters").value),batch_size:parseInt($("#fgBatch").value),
+    grad_accum:parseInt($("#fgGrad").value),save_every:parseInt($("#fgSave").value),
+    max_seq_length:parseInt($("#fgMaxSeqD").value),mask_prompt:$("#fgMask").checked,
+    grad_checkpoint:$("#fgGCk").checked,seed:parseInt($("#fgSeed").value||0)};
+  try{ const {preview:p}=await post("/api/forge/train",body);
+    const c=p.checks;
+    $("#cmdBox").textContent =
+      `$ ${p.cmdline}\n\n`+
+      `--- ${p.run_dir}/lora_config.yaml\n${p.lora_config}\n`+
+      `--- checks\n`+
+      `  mlx_lm.lora   ${c.mlx_ok?"found":"MISSING -> run refused"}\n`+
+      `  model         ${c.model_ok?"ok":"NOT FOUND"}  ${c.model}\n`+
+      `  train.jsonl   ${c.train_rows} rows\n`+
+      `  valid.jsonl   ${c.valid_rows} rows\n`+
+      `  already run?  ${c.running?"YES":"no"}\n`+
+      `  adapter out   ${p.adapter_path}\n`;
+  }catch(e){ $("#cmdBox").textContent="preview failed: "+e.message; }
+}
+async function fgTrain(){
+  const body={run_name:$("#fgRunName").value.trim(), model:$("#fgModel").value,
+    rank:parseInt($("#fgRank").value),alpha:parseInt($("#fgAlpha").value),
+    num_layers:parseInt($("#fgLayers").value),learning_rate:parseFloat($("#fgLr").value),
+    iters:parseInt($("#fgIters").value),batch_size:parseInt($("#fgBatch").value),
+    grad_accum:parseInt($("#fgGrad").value),save_every:parseInt($("#fgSave").value),
+    max_seq_length:parseInt($("#fgMaxSeqD").value),mask_prompt:$("#fgMask").checked,
+    grad_checkpoint:$("#fgGCk").checked,seed:parseInt($("#fgSeed").value||0)};
+  try{ const r=await post("/api/forge/train",body);
+    $("#cmdBox").textContent="$ "+r.run.cmd.join(" ")+"\n\nstarting…";
+    log("training started: "+r.run.name,"#cmdBox");
+    $("#fgRunBtn").disabled=true;
+    clearInterval(S.runTimer); S.runTimer=setInterval(()=>fgRefreshRun(r.run.name),2500);
+    fgRefreshRun(r.run.name);
+  }catch(e){ $("#cmdBox").textContent="refused: "+e.message; }
+}
+async function fgStop(){
+  const name=S.run?.name||$("#fgRunName").value.trim();
+  const {result}=await post("/api/forge/stop",{run_name:name});
+  log("stop: "+(result.ok?result.stopped:result.reason),"#cmdBox");
+  clearInterval(S.runTimer); $("#fgRunBtn").disabled=false; fgRefreshRun(name);
+}
+async function fgRefreshRun(name){
+  name = name || S.run?.name || $("#fgRunName").value.trim();
+  if(!name)return;
+  const {run}=await api("/api/forge/run?name="+encodeURIComponent(name));
+  S.run=run;
+  const map={running:"run",finished:"acc",failed:"rej",stopped:""};
+  const last=run.last_train, lv=run.last_val;
+  let spark="";
+  if(run.train.length>1){
+    const pts=run.train.map(t=>t.loss), mn=Math.min(...pts), mx=Math.max(...pts);
+    const norm=v=>mx===mn?50:70-((v-mn)/(mx-mn))*62;
+    spark=`<svg class="spark" viewBox="0 0 300 70" preserveAspectRatio="none">
+      <polyline fill="none" stroke="#0a84ff" stroke-width="2" points="${
+        pts.map((v,i)=>`${(i/(pts.length-1))*298},${norm(v)}`).join(" ")}"/></svg>`;
+  }
+  $("#runBox").innerHTML=`
+    <div class="meta"><span class="pill ${map[run.status]||""}">${esc(run.status)}</span>
+      <span class="hint">${esc(run.adapter_path||"")}</span></div>
+    ${run.status==="running"?('<div class="hint">live — real mlx_lm output, polled every 2.5s</div>'):""}
+    ${spark}
+    <div class="grid2" style="margin-top:8px">
+      ${kv("iteration",last?last.iter:"—")}${kv("train loss",last?last.loss.toFixed(4):"—")}
+      ${kv("val loss",lv?lv.loss.toFixed(4):"—")}${kv("tokens/sec",last?.tok_sec?last.tok_sec.toFixed(1):"—")}
+      ${kv("it/sec",last?.it_sec?last.it_sec.toFixed(2):"—")}${kv("peak mem GB",last?.mem??"—")}
+    </div>
+    <div class="log">${esc((run.tail||[]).join("\n")||"waiting for output…")}</div>`;
+  if(run.status==="running"){ $("#fgRunBtn").disabled=true; }
+  else { $("#fgRunBtn").disabled=false; clearInterval(S.runTimer); fgLoad(); }
+  if(run.status!=="running"){ renderRuns(S.forge?.runs); }
+}
+function renderRuns(runs){
+  if(!runs||!runs.length){ $("#runsBox").innerHTML='<div class="hint">none yet</div>'; return; }
+  $("#runsBox").innerHTML=runs.map(r=>`<div class="kv" style="cursor:pointer" onclick="loadRun('${esc(r.name)}')">
+    <span>${esc(r.name)}<div class="hint">${esc(r.status||"")} · ${r.data?.train||0}/${r.data?.valid||0} rows</div></span>
+    <span>${r.last_train?r.last_train.loss.toFixed(3):"—"}</span></div>`).join("");
+}
+function loadRun(name){ $("#fgRunName").value=name; fgRefreshRun(name); }
+
+/* ═══════════════ PLAYGROUND ═══════════════ */
+async function pgLoad(){
+  try{
+    const d=await api("/api/playground/status");
+    const ep=$("#pgEndpoint"); ep.innerHTML="";
+    if(!d.endpoints.length){
+      $("#epBox").innerHTML='<div class="banner warn">No local inference server found.<br>'+
+        'Start Ollama, or launch an mlx_lm.server from the panel below.</div>';
+    } else {
+      $("#epBox").innerHTML=d.endpoints.map(e=>kv(e.label,e.models.length+" models")).join("");
+    }
+    const all=[]; d.endpoints.forEach(e=>e.models.forEach(m=>all.push({m,e})));
+    // embedding models cannot chat — keep them out of the chat picker
+    const chat = all.filter(x=>!/embed|bge|gte|e5/i.test(x.m));
+    const pm=$("#pgModel"); pm.innerHTML="";
+    (chat.length?chat:all).forEach(x=>{const o=document.createElement("option");o.value=x.m;
+      o.textContent=`${x.m} · ${x.e.label}`;
+      o.dataset.url=x.e.url;o.dataset.kind=x.e.kind;pm.appendChild(o);});
+    d.endpoints.forEach(e=>{const o=document.createElement("option");o.value=e.url;
+      o.dataset.kind=e.kind;o.textContent=`${e.label} (${e.kind})`;ep.appendChild(o);});
+    for(const [p,s] of Object.entries(d.servers||{})){
+      if(s.running) log(`mlx server already on ${p}: ${(s.models||[]).join(", ")}`,"#pgLog");
+    }
+  }catch(e){ log("playground scan failed: "+e.message,"#pgLog"); }
+}
+function pgSel(){ const m=$("#pgModel"), e=$("#pgEndpoint");
+  return {model:m.value, endpoint:e.value||m.selectedOptions[0]?.dataset.url,
+          kind:e.selectedOptions[0]?.dataset.kind||m.selectedOptions[0]?.dataset.kind}; }
+async function pgSend(){
+  const prompt=$("#pgPrompt").value.trim(); if(!prompt)return;
+  const sel=pgSel();
+  S.pgChat.push({role:"user",content:prompt}); $("#pgPrompt").value=""; renderChat();
+  try{
+    const r=await post("/api/playground/chat",{prompt,system:$("#pgSystem").value,
+      model:sel.model,endpoint:sel.endpoint,kind:sel.kind,
+      temperature:parseFloat($("#pgTemp").value||0),max_tokens:parseInt($("#pgMax").value||512)});
+    S.pgChat.push({role:"assistant",content:r.text,meta:
+      `${r.endpoint} · ${r.model} · ${r.wall_ms} ms${r.ttft_ms?` · ttft ${r.ttft_ms} ms`:""}`+
+      `${r.tok_s?` · ${r.tok_s} tok/s`:""} · ${r.usage?.completion_tokens??"?"} tok`});
+    $("#pgMetrics").textContent=`${r.tok_s?r.tok_s+" tok/s · ":""}${r.wall_ms} ms`;
+  }catch(e){
+    S.pgChat.push({role:"assistant",content:"⚠ "+e.message,meta:"not sent — no server replied"});
+  }
+  renderChat();
+}
+function renderChat(){
+  $("#pgChat").innerHTML=S.pgChat.map(m=>`<div class="say ${m.role==="user"?"u":"a"}">${esc(m.content)}
+    ${m.meta?`<span class="t">${esc(m.meta)}</span>`:""}</div>`).join("") ||
+    '<div class="hint">No messages yet. Replies come from a real local server only.</div>';
+  $("#pgChat").scrollIntoView(false);
+}
+function pgClear(){ S.pgChat=[]; renderChat(); }
+async function pgProbe(){
+  const prompt=$("#pgPrompt").value.trim() || (S.pgChat.filter(m=>m.role==="user").slice(-1)[0]?.content||"");
+  if(!prompt){ $("#prBox").innerHTML='<div class="banner warn">Type a prompt first.</div>'; return; }
+  const sel=pgSel();
+  $("#prBox").innerHTML='<div class="hint">running greedy + samples…</div>';
+  try{
+    const r=await post("/api/playground/probe",{prompt,system:$("#pgSystem").value,model:sel.model,
+      endpoint:sel.endpoint,kind:sel.kind,n:parseInt($("#prN").value||6),
+      temperature:parseFloat($("#prT").value||0.3),max_tokens:parseInt($("#pgMax").value||512)});
+    const cls=r.agreement===1?"ok":r.agreement>=0.8?"warn":"err";
+    $("#prBox").innerHTML=`
+      <div class="banner ${cls}">agreement ${r.matches}/${r.n}
+        ${r.agreement!=null?`(${(r.agreement*100).toFixed(0)}%)`:""} · Wilson
+        [${(r.wilson[0]*100).toFixed(0)}%, ${(r.wilson[1]*100).toFixed(0)}%]</div>
+      <div class="hint">greedy answer</div>
+      <div class="msg assistant" style="max-height:16vh">${esc(r.greedy.text)}</div>
+      ${r.samples.map((s,i)=>`<div class="diff" style="border-color:${s.matches?"var(--ok)":"var(--err)"}">
+        <div class="role">sample ${i+1} — ${s.ok?(s.matches?"matched":"diverged"):"error"}</div>
+        <div class="hint" style="font-family:var(--mono)">${esc(s.ok?s.text.slice(0,400):s.error)}</div></div>`).join("")}`;
+  }catch(e){ $("#prBox").innerHTML=`<div class="banner err">${esc(e.message)}</div>`; }
+}
+async function pgServerStart(){
+  const body={model:$("#pgSrvModel").value,adapter_path:$("#pgSrvAdapter").value||null,
+    port:parseInt($("#pgSrvPort").value||8080)};
+  try{ const {result}=await post("/api/playground/server/start",body);
+    $("#srvBox").innerHTML=`<div class="banner ${result.ok?"ok":"err"}">${esc(result.ok?
+      "starting on port "+result.port+" — loading a 14B can take a minute":result.reason)}</div>`;
+    if(result.ok){ clearInterval(S.pgTimer); S.pgTimer=setInterval(pgServerStatus,3000); }
+  }catch(e){ $("#srvBox").innerHTML=`<div class="banner err">${esc(e.message)}</div>`; }
+}
+async function pgServerStatus(){
+  const port=parseInt($("#pgSrvPort").value||8080);
+  const {server}=await api("/api/playground/server?port="+port);
+  $("#srvBox").innerHTML=server.running
+    ? `<div class="banner ok">listening on ${port} · ${(server.models||[]).join(", ")}</div>`
+    : `<div class="banner ${server.starting?"warn":""}">${server.starting?"loading…":"not running"}</div>`+
+      (server.tail?.length?`<div class="log">${esc(server.tail.join("\n"))}</div>`:"");
+  if(server.running){ clearInterval(S.pgTimer); pgLoad(); }
+}
+async function pgServerStop(){ await post("/api/playground/server/stop",{port:parseInt($("#pgSrvPort").value||8080)});
+  clearInterval(S.pgTimer); pgServerStatus(); }
+
+/* ── global keys ───────────────────────────────────────────────────────── */
+document.addEventListener("keydown",ev=>{
+  if(ev.metaKey&&ev.key==="Enter"&&S.mode==="playground"){ ev.preventDefault(); pgSend(); return; }
+  if(ev.metaKey&&ev.key==="s"){ if(S.editing){ev.preventDefault();saveEdit();} return; }
+  const t=ev.target.tagName;
+  if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT"){
+    if(ev.key==="Escape"){ev.target.blur(); if(S.editing){S.editing=false;render();}} return; }
+  if(S.mode!=="data") return;
+  if(S.editing){ if(ev.key==="Escape"){S.editing=false;render();} return; }
+  const k=ev.key;
+  if(k==="a")decide("accepted"); else if(k==="r")decide("rejected");
+  else if(k==="e")startEdit(); else if(k==="u")resetRow(); else if(k==="d")toggleDiff();
+  else if(k==="ArrowRight"||k==="n"||k===" "){ev.preventDefault();move(1);}
+  else if(k==="ArrowLeft"||k==="p")move(-1);
+  else if(k==="f"){ev.preventDefault();$("#fQ").focus();}
+  else if(k==="?")showHelp();
+  else if(/^[1-9]$/.test(k)){ const flags=Object.keys(S.counts.by_flag||{}); const f=flags[parseInt(k)-1];
+    if(f){$("#fFlag").value=f;$("#fDecision").value="";applyFilters();} }
+});
+$("#sessionSel").addEventListener("change",e=>{ if(e.target.value) selectSession(e.target.value); });
+
+(async ()=>{
+  S.mode = localStorage.getItem("sf_mode") || "data";
+  try{ await loadSessions(); }catch(e){ log("load failed: "+e.message); }
+  setMode(S.mode);
+  renderChat();
+  setInterval(()=>{ if(S.session&&S.mode==="data")
+    api("/api/session?session="+encodeURIComponent(S.session))
+      .then(({session})=>{S.counts=session.counts||{};renderProgress();}).catch(()=>{}); },5000);
+})();
+</script>
+</body>
+</html>

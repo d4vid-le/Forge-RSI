@@ -1,0 +1,10 @@
+{
+  "id": "dev_017",
+  "title": "anagram",
+  "prompt": "Write `is_anagram(a: str, b: str) -> bool` that ignores case and whitespace.",
+  "tests": "import unittest\nfrom solution import is_anagram\n\nclass T(unittest.TestCase):\n    def test_true(self):\n        self.assertTrue(is_anagram(\"listen\", \"silent\"))\n    def test_false(self):\n        self.assertFalse(is_anagram(\"abc\", \"abd\"))\n    def test_spaces(self):\n        self.assertTrue(is_anagram(\"Dormitory\", \"dirty room\"))\n    def test_empty(self):\n        self.assertTrue(is_anagram(\"\", \"\"))",
+  "difficulty": "medium",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

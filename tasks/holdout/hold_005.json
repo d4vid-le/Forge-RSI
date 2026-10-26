@@ -1,0 +1,12 @@
+{
+  "id": "hold_005",
+  "title": "is_balanced",
+  "prompt": "Write `is_balanced(s: str) -> bool` that returns True when all brackets `()[]{}` are correctly balanced and nested. Non-bracket characters are ignored.",
+  "tests": "import unittest\nfrom solution import is_balanced\n\nclass T(unittest.TestCase):\n    def test_balanced(self):\n        self.assertTrue(is_balanced(\"([]{})\"))\n    def test_unbalanced(self):\n        self.assertFalse(is_balanced(\"([)]\"))\n    def test_extra_close(self):\n        self.assertFalse(is_balanced(\"())\"))\n    def test_ignore_text(self):\n        self.assertTrue(is_balanced(\"a(b)c[d]\"))",
+  "difficulty": "medium",
+  "tags": [
+    "strings"
+  ],
+  "entry": "solution.py",
+  "timeout_s": 20
+}

@@ -1,0 +1,10 @@
+{
+  "id": "dev_015",
+  "title": "title_case",
+  "prompt": "Write `title_case(s: str) -> str` that capitalizes the first letter of each whitespace-separated word and lowercases the rest.",
+  "tests": "import unittest\nfrom solution import title_case\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(title_case(\"hello world\"), \"Hello World\")\n    def test_mixed(self):\n        self.assertEqual(title_case(\"hELLO wORLD\"), \"Hello World\")\n    def test_single(self):\n        self.assertEqual(title_case(\"x\"), \"X\")\n    def test_empty(self):\n        self.assertEqual(title_case(\"\"), \"\")",
+  "difficulty": "easy",
+  "tags": [],
+  "entry": "solution.py",
+  "timeout_s": 20
+}
