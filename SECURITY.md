@@ -1,7 +1,7 @@
 # Security and data handling
 
-SkillForge is local-first. This repository is the **code and the synthetic
-benchmark**, not a dump of a working machine.
+**Forge-RSI** is local-first, with the **SkillForge** workbench. This repository
+is the **code and the synthetic benchmark**, not a dump of a working machine.
 
 ## What is published
 

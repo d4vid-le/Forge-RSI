@@ -16,6 +16,7 @@ cp config.example.toml config.toml
 python3 tasks/build_tasks.py          # every reference must pass its own tests
 python3 tasks/lint_tasks.py           # every prompt names the functions its tests import
 python3 -m py_compile forge_rsi/*.py pipeline/*.py dashboard/*.py
+python3 -m unittest discover -s tests
 python3 -m pipeline --help
 ```
 
