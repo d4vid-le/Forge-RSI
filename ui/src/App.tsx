@@ -87,7 +87,7 @@ export default function App() {
           </div>
           <div>
             <div className="text-sm font-semibold tracking-tight">SkillForge</div>
-            <div className="text-[10px] uppercase tracking-[0.14em] text-dim">continual learning</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-dim">Forge-RSI workbench</div>
           </div>
         </div>
 

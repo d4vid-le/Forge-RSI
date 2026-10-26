@@ -1,7 +1,8 @@
-# SkillForge runbook
+# Forge-RSI runbook
 
-One product, one loop: curate data, train isolated skills, measure, search the
-harness, replay policies, and keep the base frozen.
+Forge-RSI is the engine; **SkillForge** is the local workbench UI and data
+pipeline that drives it. One loop: curate data, train isolated skills, measure,
+search the harness, replay policies, and keep the base frozen.
 
 ## 0. Setup
 
@@ -28,13 +29,13 @@ npm --prefix ui run build
 ```bash
 PYTHON=/path/to/mlx-env/bin/python \
 PATH=/path/to/mlx-env/bin:$PATH \
-SKILLFORGE_LABS=/absolute/path/to/MiMo-v2.6-distill-qwen-9b-mlx \
+FORGE_RSI_LABS=/absolute/path/to/MiMo-v2.6-distill-qwen-9b-mlx \
 ./sf serve
 # http://127.0.0.1:8010
 ```
 
 `PYTHON` selects the interpreter. `PATH` makes `mlx_lm.lora` and
-`mlx_lm.server` discoverable. `SKILLFORGE_LABS` adds model directories outside
+`mlx_lm.server` discoverable. `FORGE_RSI_LABS` adds model directories outside
 the Hugging Face cache. Without the MLX bin on `PATH`, the Train view disables
 training and says why; it never simulates.
 

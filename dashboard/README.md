@@ -1,5 +1,8 @@
 # SkillForge Ops dashboard
 
+Part of the **Forge-RSI** project. This is the standalone read-only view; the
+same overview is embedded in the SkillForge workbench.
+
 A read-only local dashboard over the lab's measured artifacts:
 
 - base model lock status;

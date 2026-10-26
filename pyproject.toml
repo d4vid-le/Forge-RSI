@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "skillforge-rsi"
+name = "forge-rsi"
 version = "0.1.0"
-description = "A local-first frozen-base skill library with a measured RSI harness loop"
+description = "Forge-RSI: a local-first frozen-base continual-learning engine with the SkillForge workbench"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

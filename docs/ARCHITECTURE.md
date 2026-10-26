@@ -1,4 +1,8 @@
-# Architecture
+# Forge-RSI architecture
+
+Forge-RSI is the engine (`forge_rsi/`); **SkillForge** is the workbench
+(`ui/`, `pipeline/`, `dashboard/`). The split is deliberate: the engine owns
+measurement and search, the workbench owns curation, training, and inspection.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -23,7 +27,7 @@
               tasks/ · harness/ · reports/ · runs/ · adapters/
 ```
 
-## UI layer
+## UI layer — SkillForge workbench
 
 - One shell: left rail (Workbench / Intelligence / Observability), compact top
   bar, full-height work area.
@@ -34,7 +38,7 @@
 
 ## API layer
 
-`pipeline/api.py` is a stdlib `ThreadingHTTPServer` with:
+`pipeline/api.py` is the SkillForge local API: a stdlib `ThreadingHTTPServer` with:
 
 - Data: `/api/sessions`, `/api/session`, `/api/rows`, `/api/decide`,
   `/api/bulk`, `/api/edit`, `/api/import`, `/api/export`, `/api/quarantine`.

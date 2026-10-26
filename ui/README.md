@@ -1,5 +1,8 @@
 # SkillForge product UI
 
+The SkillForge workbench is the UI of the **Forge-RSI** project. The engine lives
+in `forge_rsi/`; this directory is the local workbench served at `:8010`.
+
 The React workbench served by the pipeline at `http://127.0.0.1:8010`.
 
 ## Views

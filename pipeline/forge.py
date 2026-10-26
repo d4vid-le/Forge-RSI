@@ -38,10 +38,11 @@ DATA_DIR = REPO_ROOT / "data"
 CACHE_FILE = DATA_DIR / "base_lock_cache.json"
 
 # Optional extra lab roots, supplied by the operator (never hardcoded):
-#   SKILLFORGE_LABS=/path/one:/path/two
+#   FORGE_RSI_LABS=/path/one:/path/two
 KNOWN_LABS = [
     Path(p).expanduser()
-    for p in os.environ.get("SKILLFORGE_LABS", "").split(os.pathsep)
+    for p in (os.environ.get("FORGE_RSI_LABS")
+              or os.environ.get("SKILLFORGE_LABS", "")).split(os.pathsep)
     if p.strip()
 ]
 HF_HUB = Path.home() / ".cache" / "huggingface" / "hub"

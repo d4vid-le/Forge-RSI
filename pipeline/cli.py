@@ -21,7 +21,11 @@ from . import export as export_mod
 from . import ingest as ingest_mod
 from .store import Store
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = os.environ.get("SKILLFORGE_DB", str(REPO_ROOT / "data" / "skillforge.db"))
+DEFAULT_DB = (
+    os.environ.get("FORGE_RSI_DB")
+    or os.environ.get("SKILLFORGE_DB")
+    or str(REPO_ROOT / "data" / "skillforge.db")
+)
 
 
 def _print_summary(summary: dict, stats, records):

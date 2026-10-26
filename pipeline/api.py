@@ -43,7 +43,11 @@ from . import playground as pg_mod
 from .store import Store
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DB = os.environ.get("SKILLFORGE_DB", str(REPO_ROOT / "data" / "skillforge.db"))
+DEFAULT_DB = (
+    os.environ.get("FORGE_RSI_DB")
+    or os.environ.get("SKILLFORGE_DB")
+    or str(REPO_ROOT / "data" / "skillforge.db")
+)
 CLASSIC_UI = Path(__file__).resolve().parent / "ui" / "index.html"
 UI_DIST = REPO_ROOT / "ui" / "dist"
 MAX_BODY = 512 * 1024 * 1024          # upload guard: larger data should be imported by path

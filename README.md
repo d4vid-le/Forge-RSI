@@ -1,14 +1,27 @@
-# SkillForge
+# Forge-RSI
 
-**A local continual-learning workbench for a frozen model.**
+**A local continual-learning engine for a frozen model, with the SkillForge workbench.**
 
-One product, one loop: curate real data, train isolated skills, measure them,
-search the agent harness, replay policies offline, and keep a frozen base
-byte-identical the whole time.
+Forge-RSI is the project and the engine: recursive harness search, Le-Gates skill
+isolation, gap mining, Dream policy replay, and private-holdout rotation.
+**SkillForge** is the local workbench and data/training pipeline inside it:
+curate real data, train isolated adapters, inspect every measurement, and queue
+the long chains behind human gates.
+
+The base model stays frozen and byte-identical the whole time.
 
 ![SkillForge workbench](docs/screenshot-overview.png)
 
-## What is here
+## Naming
+
+| Name | What it is |
+|---|---|
+| **Forge-RSI** | The project and the engine (`forge_rsi/`): harness loop, Le-Gates, gaps, Dream, holdouts |
+| **SkillForge** | The workbench UI and data/training pipeline (`ui/`, `pipeline/`): data, train, jobs, playground, telemetry |
+
+The repository is `github.com/d4vid-le/Forge-RSI`.
+
+## The SkillForge workbench
 
 | View | What it does |
 |---|---|
@@ -17,7 +30,7 @@ byte-identical the whole time.
 | **Train** | Real `mlx_lm.lora` training: dataset prep, LoRA config, exact command preview, live loss/log |
 | **Jobs** | Guarded queue: skill, gap, RSI, Dream, and holdout-rotation chains with a human gate |
 | **Skills** | Le-Gates adapters: rank-8 deltas on the frozen base, one gate at a time, quarantine-first |
-| **RSI** | Harness proposals, pairwise accept/reject, holdout guards, cost-aware acceptance |
+| **RSI** | Harness proposals, pairwise accept/reject, holdout guards, Dream replay, gap clusters |
 | **Playground** | Real local chat and robustness probe against `mlx_lm.server` or Ollama |
 | **Telemetry** | Runs, evaluations, base-lock state, and generated reports |
 
@@ -42,12 +55,13 @@ ln -s /absolute/path/to/Qwen3.6-35B-A3B-MLX-8bit       models/Qwen3.6-35B-A3B-ML
 
 Run the workbench under the MLX environment. `PYTHON` selects the interpreter,
 `PATH` makes `mlx_lm.lora` / `mlx_lm.server` discoverable, and
-`SKILLFORGE_LABS` adds model directories outside the Hugging Face cache:
+`FORGE_RSI_LABS` adds model directories outside the Hugging Face cache
+(`SKILLFORGE_LABS` is still accepted for compatibility):
 
 ```bash
 PYTHON=/path/to/mlx-env/bin/python \
 PATH=/path/to/mlx-env/bin:$PATH \
-SKILLFORGE_LABS=/absolute/path/to/MiMo-v2.6-distill-qwen-9b-mlx \
+FORGE_RSI_LABS=/absolute/path/to/MiMo-v2.6-distill-qwen-9b-mlx \
 ./sf serve
 # http://127.0.0.1:8010
 ```
@@ -70,8 +84,8 @@ npm --prefix ui run build    # writes ui/dist, served by ./sf serve
 
 ### Tests
 
-Deterministic stdlib checks for the Forge log parser and the guarded queue
-(no model, no network):
+Deterministic stdlib checks for the Forge log parser, the guarded queue, gap
+mining, Dream replay, and holdout rotation (no model, no network):
 
 ```bash
 python -m unittest discover -s tests
@@ -109,9 +123,9 @@ Data → Train → Skills → RSI → Playground → Telemetry
 - **Playground**: chat and probe a real local server; no server, no reply.
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
-The remaining automation work is gap detection, automatic curation suggestions,
-and private-holdout rotation. The queue is intentionally sequential and still
-requires a human at the promotion gate.
+The next automation work is scheduling/triggering the chains, teacher-authored
+repairs for gaps with no verified pass, and a composition controller after
+offline validation. Promotion still requires a human at the gate.
 
 ## Measured state
 
@@ -134,10 +148,10 @@ Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 ## Architecture
 
 ```
-ui/                 React + Vite + Tailwind product UI (prebuilt in ui/dist)
-pipeline/           data curation, Forge (mlx_lm.lora), Playground, jobs, local API
-forge_rsi/          RSI loop, Le-Gates, gaps, Dream replay, holdout rotation, trainer
-dashboard/          standalone read-only Ops collector
+ui/                 SkillForge workbench: React + Vite + Tailwind (prebuilt in ui/dist)
+pipeline/           SkillForge pipeline: data curation, Forge (mlx_lm.lora), Playground, jobs, local API
+forge_rsi/          Forge-RSI engine: RSI loop, Le-Gates, gaps, Dream replay, holdout rotation, trainer
+dashboard/          standalone read-only Ops collector for the workbench
 tasks/              20 dev + 10 holdout + 24 skill probes + composition
 harness/            append-only harness versions
 reports/            measured, generated reports
@@ -168,4 +182,4 @@ See [Architecture](docs/ARCHITECTURE.md) for the data flow and gates,
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+Forge-RSI is MIT. See [`LICENSE`](LICENSE).

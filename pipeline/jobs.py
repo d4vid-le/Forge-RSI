@@ -21,8 +21,12 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-JOBS_FILE = Path(os.environ.get("SKILLFORGE_JOBS", str(REPO_ROOT / "data" / "jobs.json")))
-LOG_DIR = Path(os.environ.get("SKILLFORGE_JOB_LOGS", str(REPO_ROOT / "runs" / "jobs")))
+JOBS_FILE = Path(os.environ.get("FORGE_RSI_JOBS")
+                 or os.environ.get("SKILLFORGE_JOBS")
+                 or str(REPO_ROOT / "data" / "jobs.json"))
+LOG_DIR = Path(os.environ.get("FORGE_RSI_JOB_LOGS")
+               or os.environ.get("SKILLFORGE_JOB_LOGS")
+               or str(REPO_ROOT / "runs" / "jobs"))
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{1,63}$")

@@ -1,4 +1,4 @@
-# SkillForge pipeline — Stage 1 (data)
+# SkillForge pipeline — data layer of Forge-RSI
 
 Turns downloaded data in any shape into one clean training file, with a
 line-by-line human review pass in between. No third-party dependencies
@@ -91,12 +91,12 @@ The UI has four tabs: **Ops** (read-only lab overview), **Data** (curation),
 
 For Forge training, run the server under the MLX environment and put its bin on
 `PATH` so `mlx_lm.lora` / `mlx_lm.server` are found. If your models live outside
-the Hugging Face cache, point `SKILLFORGE_LABS` at the model directory:
+the Hugging Face cache, point `FORGE_RSI_LABS` at the model directory:
 
 ```bash
 PYTHON=/path/to/mlx-env/bin/python \
 PATH=/path/to/mlx-env/bin:$PATH \
-SKILLFORGE_LABS=/path/to/MiMo-model \
+FORGE_RSI_LABS=/path/to/MiMo-model \
 ./sf serve
 ```
 

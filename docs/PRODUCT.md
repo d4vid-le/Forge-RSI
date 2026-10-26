@@ -1,6 +1,7 @@
-# Product — the continual-learning loop
+# Forge-RSI — the continual-learning loop
 
-SkillForge is one product, not a pile of experiments. The loop is:
+Forge-RSI is one project, not a pile of experiments. **SkillForge** is the
+workbench that drives the loop. The loop is:
 
 ```
                     ┌──────────────────────────────────────────┐
