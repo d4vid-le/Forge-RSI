@@ -121,6 +121,11 @@ Data → Train → Skills → RSI → Playground → Telemetry
   templates, verify every reference, archive the previous set, and publish only
   counts/hashes. The prompts and hidden tests stay local.
 - **Playground**: chat and probe a real local server; no server, no reply.
+- **H2 research**: the frozen [pre-registration](docs/H2-PREREG-v2.md) runs a
+  staged parallel propose–probe–compose experiment on `dev_hard`, with A (r1b),
+  B (H2.1 real table), and E (greedy same budget). Stage 2 and the experience
+  library only run if B wins; the private holdout stays sealed until the winner
+  is frozen.
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
 The next automation work is scheduling/triggering the chains, teacher-authored
@@ -140,6 +145,8 @@ offline validation. Promotion still requires a human at the gate.
 | Composition | parts work; the compound whole does not |
 | Dream replay | `test_gated` 10/12 vs `first` 9/12 on 12 probes × 3 samples |
 | Gap mining | 14 failing probes → 28 re-verified rows, holdouts excluded |
+| H2 hard split | r1b 16/20 on frozen `dev_hard` (original dev is saturated 20/20) |
+| H2 replication | r1b 13/24 on the 24 skill probes |
 
 Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 `composition.md`, `private_holdout.md`, `gaps.md`, `dream.md`, `r1.md`,
@@ -150,11 +157,14 @@ Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 ```
 ui/                 SkillForge workbench: React + Vite + Tailwind (prebuilt in ui/dist)
 pipeline/           SkillForge pipeline: data curation, Forge (mlx_lm.lora), Playground, jobs, local API
-forge_rsi/          Forge-RSI engine: RSI loop, Le-Gates, gaps, Dream replay, holdout rotation, trainer
+forge_rsi/          Forge-RSI engine: RSI loop, Le-Gates, gaps, Dream replay, holdout rotation,
+                    H2 propose–probe–compose, experience library, plan composition, trainer
 dashboard/          standalone read-only Ops collector for the workbench
 tasks/              20 dev + 10 holdout + 24 skill probes + composition
 harness/            append-only harness versions
 reports/            measured, generated reports
+tasks/dev_hard/      frozen 20-task H2 search split (r1b 16/20)
+docs/H2-PREREG-v2.md  frozen H2 endpoint, gates, and staging
 scripts/            run-all + round-2 helpers
 legacy/             preserved prototypes and old lab artifacts (local only)
 ```

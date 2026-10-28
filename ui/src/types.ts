@@ -110,6 +110,34 @@ export type Holdout = {
   error?: string;
 };
 
+export type H2Arm = {
+  passed?: number;
+  score?: number;
+  stats?: {
+    wins: number; losses: number; ties: number; delta: number;
+    sign_test_p: number; bootstrap_ci95: [number, number];
+  };
+  harness?: string;
+};
+
+export type H2Summary = {
+  round: string;
+  decision: string;
+  stage1_pass: boolean;
+  promoted: boolean;
+  primary: boolean;
+  beats_e: boolean;
+  replication: boolean;
+  holdout_ok: boolean;
+  private_ok: boolean;
+  A: H2Arm;
+  B: H2Arm;
+  E: H2Arm;
+  prereg_sha256?: string;
+  artifacts?: string;
+  final?: Record<string, { stats?: H2Arm["stats"]; A?: Summary; B?: Summary }>;
+};
+
 export type OpsStatus = {
   generated_at: string;
   project: string;
@@ -137,6 +165,7 @@ export type OpsStatus = {
     public_probe_delta?: number;
     forgetting_ok?: boolean;
   };
+  h2?: H2Summary | null;
   dream?: Dream | null;
   gaps?: Gaps | null;
   holdout?: Holdout | null;

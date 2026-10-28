@@ -357,6 +357,51 @@ def cmd_dream_report(cfg: dict, a) -> int:
     return 0
 
 
+def cmd_h2_stage1(cfg: dict, a) -> int:
+    from . import h2
+    result = h2.run_stage1(cfg, a.round, k=a.k, seed=a.seed,
+                           reuse=not a.no_reuse)
+    print(json.dumps(result, indent=2))
+    print(f"[h2] {result['decision']} -> {result['artifacts']}")
+    return 0
+
+
+def cmd_h2_plans(cfg: dict, a) -> int:
+    from . import plans
+    result = plans.run_arm(cfg, a.arm, limit=a.limit, seed=a.seed)
+    print(json.dumps(result["summary"], indent=2))
+    return 0
+
+
+def cmd_h2_plans_all(cfg: dict, a) -> int:
+    for arm in ("single", "dual", "forward", "reverse", "random"):
+        rc = _run_cli(["h2-plans", "--arm", arm, "--seed", str(a.seed)]
+                      + (["--limit", str(a.limit)] if a.limit else []))
+        if rc:
+            return rc
+    from . import plans
+    print(f"[h2-plans] report -> {plans.report(cfg)}")
+    return 0
+
+
+def cmd_h2_library(cfg: dict, a) -> int:
+    import shutil
+    from . import library as lib_mod
+    result = json.loads((Path(cfg["paths"]["runs"]) / f"{a.run}_ppc.json").read_text())
+    cues = result.get("contrast", {}).get("cue_table") or []
+    lib = lib_mod.Library(Path(cfg["paths"]["harness"]) / "library" / f"{a.run}.jsonl")
+    lessons, labeled = lib.build_from_contrast(cues, source_split="dev_hard")
+    bench = lib.benchmark(labeled, limits=(1, 2, "all"))
+    out = Path(cfg["paths"]["runs"]) / a.run / "library"
+    out.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(lib.path, out / "lessons.jsonl")
+    (out / "benchmark.json").write_text(json.dumps(bench, indent=2) + "\n")
+    text = lib_mod.format_benchmark(bench)
+    (Path(cfg["paths"]["reports"]) / "h2_library.md").write_text(text)
+    print(text)
+    return 0
+
+
 def cmd_final_report(cfg: dict, a) -> int:
     path = final_report.write(cfg)
     print(f"[final-report] wrote {path}")
@@ -625,6 +670,29 @@ def build_parser() -> argparse.ArgumentParser:
     dr = sub.add_parser("dream-report", help="write reports/dream.md from a replay")
     dr.add_argument("--run", default=None, help="run id (default: latest dream replay)")
     dr.set_defaults(func=cmd_dream_report)
+
+    h2s = sub.add_parser("h2-stage1", help="run pre-registered H2.1 Stage 1 (A/B/E)")
+    h2s.add_argument("--round", default="h2a")
+    h2s.add_argument("--k", type=int, default=2)
+    h2s.add_argument("--seed", type=int, default=0)
+    h2s.add_argument("--no-reuse", action="store_true")
+    h2s.set_defaults(func=cmd_h2_stage1)
+
+    h2l = sub.add_parser("h2-library", help="build the H2.2 library and retrieval benchmark")
+    h2l.add_argument("--run", default="h2a")
+    h2l.set_defaults(func=cmd_h2_library)
+
+    h2p = sub.add_parser("h2-plans", help="run one H2.3 composition arm")
+    h2p.add_argument("--arm", choices=["single", "dual", "forward", "reverse", "random"],
+                     required=True)
+    h2p.add_argument("--limit", type=int, default=None)
+    h2p.add_argument("--seed", type=int, default=0)
+    h2p.set_defaults(func=cmd_h2_plans)
+
+    h2pa = sub.add_parser("h2-plans-all", help="run all H2.3 arms and write the report")
+    h2pa.add_argument("--limit", type=int, default=None)
+    h2pa.add_argument("--seed", type=int, default=0)
+    h2pa.set_defaults(func=cmd_h2_plans_all)
 
     db = sub.add_parser("dashboard", help="read-only local ops dashboard")
     db.add_argument("--host", default="127.0.0.1")

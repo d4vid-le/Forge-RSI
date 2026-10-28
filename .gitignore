@@ -32,3 +32,6 @@ ui/.vite/
 # Local planning notes that carry operator paths.
 docs/PLAN.md
 PAPER.md
+
+# Generated experience-library entries (local evidence).
+harness/library/

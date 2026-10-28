@@ -43,6 +43,7 @@ export function RsiView() {
   const cfgs = status?.composition?.configs || {};
   const dream = status?.dream || null;
   const gaps = status?.gaps || null;
+  const h2 = status?.h2 || null;
 
   return (
     <ViewShell>
@@ -80,6 +81,56 @@ export function RsiView() {
           </div>
         </Card>
       </div>
+
+      <Card className="mt-4">
+        <CardHeader
+          title="H2.1 harness search"
+          subtitle={h2 ? `${h2.round} · pre-reg ${h2.prereg_sha256?.slice(0, 12) || "—"}` : "Pre-registered parallel propose–probe–compose"}
+          right={h2 ? (
+            <Pill tone={h2.promoted ? "ok" : h2.decision.startsWith("STOP") ? "err" : "warn"}>
+              {h2.decision}
+            </Pill>
+          ) : undefined}
+        />
+        {h2 ? (
+          <>
+            <div className="max-h-[260px] overflow-auto">
+              <table className="data-table">
+                <thead><tr><th>arm</th><th className="num">passed</th><th className="num">score</th><th className="num">Δ</th><th className="num">W/L</th><th className="num">sign p</th><th>CI95</th></tr></thead>
+                <tbody>
+                  {(["A", "B", "E"] as const).map((key) => {
+                    const arm = h2[key];
+                    const s = arm?.stats;
+                    return (
+                      <tr key={key}>
+                        <td className="mono text-fg">{key}{key === "A" ? " · r1b" : key === "B" ? " · H2.1 real" : " · greedy same budget"}</td>
+                        <td className="num">{arm?.passed ?? "—"}/20</td>
+                        <td className="num">{fmt(arm?.score, 2)}</td>
+                        <td className={cx("num", (s?.delta || 0) > 0 ? "text-ok" : (s?.delta || 0) < 0 ? "text-err" : "text-muted")}>
+                          {s ? `${s.delta >= 0 ? "+" : ""}${s.delta.toFixed(2)}` : "—"}
+                        </td>
+                        <td className="num text-muted">{s ? `${s.wins}/${s.losses}` : "—"}</td>
+                        <td className="num text-muted">{s ? s.sign_test_p.toFixed(4) : "—"}</td>
+                        <td className="mono text-[10px] text-dim">{s ? `[${s.bootstrap_ci95[0].toFixed(2)}, ${s.bootstrap_ci95[1].toFixed(2)}]` : "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 text-[10px]">
+              <Pill tone={h2.primary ? "ok" : "err"}>primary +3</Pill>
+              <Pill tone={h2.beats_e ? "ok" : "err"}>B &gt; E</Pill>
+              <Pill tone={h2.replication ? "ok" : "err"}>probes +3</Pill>
+              <Pill tone={h2.holdout_ok ? "ok" : "err"}>holdout guard</Pill>
+              <Pill tone={h2.private_ok ? "ok" : "err"}>private guard</Pill>
+              <span className="ml-auto text-dim">Stage 2/3 only if B wins; private sealed until final.</span>
+            </div>
+          </>
+        ) : (
+          <Empty title="No H2 round yet" detail="Run `python -m forge_rsi h2-stage1` on the frozen dev_hard split." />
+        )}
+      </Card>
 
       <Card className="mt-4">
         <CardHeader title="Iterations" subtitle="Every proposal, including the rejected ones" />

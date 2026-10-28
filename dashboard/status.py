@@ -32,7 +32,7 @@ def _rel(path: str | Path | None, root: Path) -> str | None:
 def _task_lint(tasks_root: Path) -> dict:
     failures = []
     total = 0
-    for split in ("dev", "holdout", "skills", "composition", "private_holdout"):
+    for split in ("dev", "dev_hard", "holdout", "skills", "composition", "private_holdout"):
         d = tasks_root / split
         if not d.exists():
             continue
@@ -219,6 +219,32 @@ def _holdout(cfg: dict) -> dict:
     }
 
 
+def _h2(cfg: dict) -> dict | None:
+    runs = Path(cfg["paths"]["runs"])
+    files = sorted(runs.glob("*/summary.json"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    if not files:
+        return None
+    d = _load(files[0])
+    if not d:
+        return None
+    return {
+        "round": d.get("round"),
+        "decision": d.get("decision"),
+        "stage1_pass": d.get("stage1_pass"),
+        "promoted": d.get("promoted"),
+        "primary": d.get("primary"),
+        "beats_e": d.get("beats_e"),
+        "replication": d.get("replication"),
+        "holdout_ok": d.get("holdout_ok"),
+        "private_ok": d.get("private_ok"),
+        "A": d.get("A"), "B": d.get("B"), "E": d.get("E"),
+        "prereg_sha256": d.get("prereg_sha256"),
+        "artifacts": d.get("artifacts"),
+        "final": d.get("final") or {},
+    }
+
+
 def _reports(cfg: dict) -> list[dict]:
     reports = Path(cfg["paths"]["reports"])
     out = []
@@ -244,7 +270,7 @@ def collect(cfg: dict) -> dict:
     iters, holds = _rsi(cfg)
     task_counts = {
         split: len(list((tasks_root / split).glob("*.json")))
-        for split in ("dev", "holdout", "skills", "composition", "private_holdout")
+        for split in ("dev", "dev_hard", "holdout", "skills", "composition", "private_holdout")
         if (tasks_root / split).exists()
     }
     lint = _task_lint(tasks_root)
@@ -264,6 +290,7 @@ def collect(cfg: dict) -> dict:
         "rsi": {"iterations": iters, "holdout": holds},
         "composition": _load(runs / "composition_matrix.json", {}),
         "private_decision": _load(runs / "private_round2_decision.json", {}),
+        "h2": _h2(cfg),
         "dream": _dream(cfg),
         "gaps": _gaps(cfg),
         "holdout": _holdout(cfg),
