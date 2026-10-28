@@ -3,7 +3,7 @@ import { Check, Copy, FlaskConical, RefreshCw } from "lucide-react";
 import { api, errorMessage } from "../api";
 import type { OpsStatus } from "../types";
 import {
-  Button, Card, CardHeader, Empty, ErrorBanner, KV, PageHeader, Pill, ViewShell, fmt,
+  Button, Card, CardHeader, Empty, ErrorBanner, KV, PageHeader, Pill, ViewShell, cx, fmt,
 } from "../components/ui";
 
 const COMMANDS = `python -m forge_rsi loop --round r2 --iterations 5
