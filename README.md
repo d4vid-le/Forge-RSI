@@ -121,11 +121,12 @@ Data → Train → Skills → RSI → Playground → Telemetry
   templates, verify every reference, archive the previous set, and publish only
   counts/hashes. The prompts and hidden tests stay local.
 - **Playground**: chat and probe a real local server; no server, no reply.
-- **H2 research**: the frozen [pre-registration](docs/H2-PREREG-v2.md) runs a
-  staged parallel propose–probe–compose experiment on `dev_hard`, with A (r1b),
-  B (H2.1 real table), and E (greedy same budget). Stage 2 and the experience
-  library only run if B wins; the private holdout stays sealed until the winner
-  is frozen.
+- **H2 research**: the frozen [pre-registration](docs/H2-PREREG-v2.md) ran a
+  staged parallel propose–probe–compose experiment on `dev_hard`. Stage 1
+  stopped: **B 17/20 vs A 16/20 (+1, p=1.0)**, below the +3 floor; the greedy
+  control collapsed to duplicate proposals and was killed. Stage 2 and the
+  experience-library arms were not run, per the stop rule. See
+  [`reports/h2_stage1.md`](reports/h2_stage1.md).
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
 The next automation work is scheduling/triggering the chains, teacher-authored
@@ -147,6 +148,7 @@ offline validation. Promotion still requires a human at the gate.
 | Gap mining | 14 failing probes → 28 re-verified rows, holdouts excluded |
 | H2 hard split | r1b 16/20 on frozen `dev_hard` (original dev is saturated 20/20) |
 | H2 replication | r1b 13/24 on the 24 skill probes |
+| H2.1 Stage 1 | B 17/20 vs A 16/20 (+1); +3 floor failed; E killed on duplicate proposals |
 
 Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 `composition.md`, `private_holdout.md`, `gaps.md`, `dream.md`, `r1.md`,

@@ -63,8 +63,15 @@ def _write_json(path: Path, data: dict) -> Path:
     return path
 
 
+def _jaccard(a: dict, b: dict) -> float:
+    sa = {ln.strip() for ln in harness_mod.render(a).splitlines() if ln.strip()}
+    sb = {ln.strip() for ln in harness_mod.render(b).splitlines() if ln.strip()}
+    return len(sa & sb) / len(sa | sb) if (sa | sb) else 1.0
+
+
 def greedy_same_budget(cfg: dict, round_name: str, *, split: str = "dev_hard",
-                       iterations: int = 5, seed: int = 0) -> dict:
+                       iterations: int = 5, seed: int = 0,
+                       reuse: bool = True) -> dict:
     """Greedy RSI with the same rollout/teacher budget as Stage-1 B."""
     runs_dir = Path(cfg["paths"]["runs"])
     harness_dir = Path(cfg["paths"]["harness"])
@@ -81,37 +88,52 @@ def greedy_same_budget(cfg: dict, round_name: str, *, split: str = "dev_hard",
     incumbent = base
     incumbent_path = base_path
     history, rows = [], []
+    prev_cand = None
+    killed_duplicate = False
     for i in range(1, iterations + 1):
         label = f"{round_name}_E_h{i}"
-        fails = _failures(cfg, incumbent_run, split)
-        t0 = time.time()
-        cand, raw, errs = optimizer.propose(
-            cfg, incumbent, history, fails, version=label)
-        ledger.add("proposal", label, calls=1,
-                   wall_s=round(time.time() - t0, 3),
-                   tokens_out=len(raw or ""), error="; ".join(errs or [])[:300])
-        if cand is None:
-            rows.append({"iteration": i, "candidate": label, "accepted": False,
-                         "reason": "proposal invalid"})
-            history.append({"iteration": i, "accepted": False,
-                            "candidate": label, "reason": "proposal invalid"})
-            continue
-        cand["version"] = label
-        ok, verrs = harness_mod.validate(cand, incumbent=incumbent, cfg=cfg)
-        if not ok:
-            rows.append({"iteration": i, "candidate": label, "accepted": False,
-                         "reason": "validation: " + "; ".join(verrs)[:200]})
-            history.append({"iteration": i, "accepted": False,
-                            "candidate": label, "reason": "invalid"})
-            continue
         cp = harness_dir / f"{label}.json"
-        harness_mod.save(cand, cp)
         run_path = runs_dir / f"{label}.json"
-        if run_path.exists():
+        if reuse and cp.exists() and run_path.exists():
+            cand = harness_mod.load(cp)
             cand_run = json.loads(run_path.read_text())
+            meta = {"cached": True}
         else:
+            fails = _failures(cfg, incumbent_run, split)
+            t0 = time.time()
+            cand, raw, errs = optimizer.propose(
+                cfg, incumbent, history, fails, version=label)
+            meta = {"calls": 1, "wall_s": round(time.time() - t0, 3),
+                    "tokens_out": len(raw or ""), "error": "; ".join(errs or [])[:300]}
+            if cand is None:
+                rows.append({"iteration": i, "candidate": label, "accepted": False,
+                             "reason": "proposal invalid"})
+                history.append({"iteration": i, "accepted": False,
+                                "candidate": label, "reason": "proposal invalid"})
+                continue
+            cand["version"] = label
+            ok, verrs = harness_mod.validate(cand, incumbent=incumbent, cfg=cfg)
+            if not ok:
+                rows.append({"iteration": i, "candidate": label, "accepted": False,
+                             "reason": "validation: " + "; ".join(verrs)[:200]})
+                history.append({"iteration": i, "accepted": False,
+                                "candidate": label, "reason": "invalid"})
+                continue
+            harness_mod.save(cand, cp)
             cand_run = _eval(cfg, cp, split, label)
-        ledger.add_run(label, cand_run)
+            ledger.add("proposal", label, calls=1,
+                       wall_s=meta["wall_s"], tokens_out=meta["tokens_out"],
+                       error=meta["error"])
+        if prev_cand is not None and _jaccard(prev_cand, cand) >= 0.95:
+            killed_duplicate = True
+            rows.append({"iteration": i, "candidate": label, "accepted": False,
+                         "reason": "pre-registered duplicate kill"})
+            history.append({"iteration": i, "accepted": False,
+                            "candidate": label, "reason": "duplicate"})
+            print(f"[h2 E] duplicate proposal at iteration {i}; stopping", flush=True)
+            break
+        prev_cand = cand
+        ledger.add_run(label, cand_run, kind="rollout_cached" if meta.get("cached") else "rollout")
         cmp = evaluator.compare(incumbent_run, cand_run)
         accepted, reason = evaluator.acceptance(cmp, cand_run, incumbent_run, cfg)
         row = {
@@ -130,7 +152,8 @@ def greedy_same_budget(cfg: dict, round_name: str, *, split: str = "dev_hard",
               f"delta={cmp['delta']:+.2f} accepted={accepted}", flush=True)
     result = {
         "arm": "E", "round": round_name, "split": split,
-        "iterations": rows, "winner_harness": str(incumbent_path),
+        "iterations": rows, "killed_duplicate": killed_duplicate,
+        "winner_harness": str(incumbent_path),
         "winner_run": incumbent_run.get("run_id"),
         "summary": incumbent_run.get("summary"),
         "ledger": ledger.to_dict(),
@@ -221,7 +244,7 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
     b_stats = prereg.paired_stats(a_run, b_run, seed=seed)
 
     # E: greedy with the same budget (1 base + 5 iterations)
-    e = greedy_same_budget(cfg, round_name, split="dev_hard", iterations=5, seed=seed)
+    e = greedy_same_budget(cfg, round_name, split="dev_hard", iterations=5, seed=seed, reuse=reuse)
     e_run = json.loads((runs_dir / f"{e['winner_run']}.json").read_text())
     e_stats = prereg.paired_stats(a_run, e_run, seed=seed)
 

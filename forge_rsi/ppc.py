@@ -333,29 +333,37 @@ def run(cfg: dict, round_name: str, *, k: int = 2,
 
     specs = [{"dim": dim, "index": i}
              for dim in ("INV", "DOM") for i in range(1, k + 1)]
-    proposal_meta = propose_many(cfg, base_h, failures, specs,
-                                 lessons=lessons, round_name=round_name)
-    cand_h, cand_meta = {}, {}
-    for spec, item in zip(specs, proposal_meta):
-        label = f"{round_name}_{spec['dim'].lower()}{spec['index']}"
-        h, meta = item
-        if h is None:
-            cand_h[label] = base_h
-            meta = {**meta, "fallback": True}
-        else:
-            h["version"] = label
-            ok, errs = harness_mod.validate(h, incumbent=base_h, cfg=cfg)
-            if not ok:
+    labels = [f"{round_name}_{s['dim'].lower()}{s['index']}" for s in specs]
+    cached = all((harness_dir / f"{label}.json").exists() for label in labels) and reuse
+    if cached:
+        cand_h = {label: harness_mod.load(harness_dir / f"{label}.json")
+                  for label in labels}
+        cand_meta = {label: {"cached": True} for label in labels}
+        proposal_meta = []
+    else:
+        proposal_meta = propose_many(cfg, base_h, failures, specs,
+                                     lessons=lessons, round_name=round_name)
+        cand_h, cand_meta = {}, {}
+        for spec, item in zip(specs, proposal_meta):
+            label = f"{round_name}_{spec['dim'].lower()}{spec['index']}"
+            h, meta = item
+            if h is None:
                 cand_h[label] = base_h
-                meta = {**meta, "fallback": True, "errors": errs}
+                meta = {**meta, "fallback": True}
             else:
-                cand_h[label] = h
-        cand_meta[label] = meta
-        ledger.add("proposal", label, calls=1,
-                   tokens_in=int(meta.get("tokens_in") or 0),
-                   tokens_out=int(meta.get("tokens_out") or 0),
-                   wall_s=float(meta.get("wall_s") or 0),
-                   dim=spec["dim"], fallback=bool(meta.get("fallback")))
+                h["version"] = label
+                ok, errs = harness_mod.validate(h, incumbent=base_h, cfg=cfg)
+                if not ok:
+                    cand_h[label] = base_h
+                    meta = {**meta, "fallback": True, "errors": errs}
+                else:
+                    cand_h[label] = h
+            cand_meta[label] = meta
+            ledger.add("proposal", label, calls=1,
+                       tokens_in=int(meta.get("tokens_in") or 0),
+                       tokens_out=int(meta.get("tokens_out") or 0),
+                       wall_s=float(meta.get("wall_s") or 0),
+                       dim=spec["dim"], fallback=bool(meta.get("fallback")))
 
     cand_runs = {}
     for label, h in cand_h.items():
@@ -377,32 +385,36 @@ def run(cfg: dict, round_name: str, *, k: int = 2,
     # Composer arms: the table itself is the experimental variable.
     arm_runs, arm_harnesses = {}, {}
     for arm in arms:
-        variant = table_variant(con, arm, seed=seed)
-        out = compose_many(cfg, base_h, cand_h, variant, arm, con["cue_table"],
-                           lessons=lessons, round_name=round_name)
-        h, meta = out
-        if h is None:
-            h = base_h
-            meta = {**meta, "fallback": True}
-        h["version"] = f"{round_name}_{arm}"
-        ok, errs = harness_mod.validate(h, incumbent=base_h, cfg=cfg)
-        if not ok:
-            h = base_h
-            meta = {**meta, "fallback": True, "errors": errs}
-        arm_harnesses[arm] = h
         hp = harness_dir / f"{round_name}_{arm}.json"
-        harness_mod.save(h, hp)
+        if reuse and hp.exists():
+            h = harness_mod.load(hp)
+            meta = {"cached": True}
+        else:
+            variant = table_variant(con, arm, seed=seed)
+            out = compose_many(cfg, base_h, cand_h, variant, arm, con["cue_table"],
+                               lessons=lessons, round_name=round_name)
+            h, meta = out
+            if h is None:
+                h = base_h
+                meta = {**meta, "fallback": True}
+            h["version"] = f"{round_name}_{arm}"
+            ok, errs = harness_mod.validate(h, incumbent=base_h, cfg=cfg)
+            if not ok:
+                h = base_h
+                meta = {**meta, "fallback": True, "errors": errs}
+            harness_mod.save(h, hp)
+        arm_harnesses[arm] = h
         rp = runs_dir / f"{round_name}_{arm}.json"
         if rp.exists() and reuse:
             run = json.loads(rp.read_text())
         else:
             run = eval_fn(hp, split, f"{round_name}_{arm}")
         arm_runs[arm] = run
-        ledger.add("composer", arm, calls=1,
+        ledger.add("composer", arm, calls=0 if meta.get("cached") else 1,
                    tokens_in=int(meta.get("tokens_in") or 0),
                    tokens_out=int(meta.get("tokens_out") or 0),
                    wall_s=float(meta.get("wall_s") or 0),
-                   fallback=bool(meta.get("fallback")))
+                   fallback=bool(meta.get("fallback")), cached=bool(meta.get("cached")))
         ledger.add_run(f"arm:{arm}", run)
 
     winner, winner_run = pick_winner(arm_runs, arms)
