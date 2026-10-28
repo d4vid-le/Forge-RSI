@@ -118,6 +118,8 @@ export type H2Arm = {
     sign_test_p: number; bootstrap_ci95: [number, number];
   };
   harness?: string;
+  killed_duplicate?: boolean;
+  iterations_run?: number;
 };
 
 export type H2Summary = {
@@ -127,6 +129,7 @@ export type H2Summary = {
   promoted: boolean;
   primary: boolean;
   beats_e: boolean;
+  diversity_ok: boolean;
   replication: boolean;
   holdout_ok: boolean;
   private_ok: boolean;

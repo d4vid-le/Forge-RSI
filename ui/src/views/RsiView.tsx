@@ -121,6 +121,8 @@ export function RsiView() {
             <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 text-[10px]">
               <Pill tone={h2.primary ? "ok" : "err"}>primary +3</Pill>
               <Pill tone={h2.beats_e ? "ok" : "err"}>B &gt; E</Pill>
+              <Pill tone={h2.diversity_ok ? "ok" : "err"}>diversity</Pill>
+              {h2.E?.killed_duplicate && <Pill tone="warn">E duplicate kill</Pill>}
               <Pill tone={h2.replication ? "ok" : "err"}>probes +3</Pill>
               <Pill tone={h2.holdout_ok ? "ok" : "err"}>holdout guard</Pill>
               <Pill tone={h2.private_ok ? "ok" : "err"}>private guard</Pill>

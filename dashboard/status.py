@@ -235,6 +235,7 @@ def _h2(cfg: dict) -> dict | None:
         "promoted": d.get("promoted"),
         "primary": d.get("primary"),
         "beats_e": d.get("beats_e"),
+        "diversity_ok": d.get("diversity_ok"),
         "replication": d.get("replication"),
         "holdout_ok": d.get("holdout_ok"),
         "private_ok": d.get("private_ok"),
