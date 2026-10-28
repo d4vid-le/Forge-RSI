@@ -37,6 +37,7 @@
 
 - B ledger: 120 calls, 54,288 tokens, 1016.1s
 - E ledger: 40 calls, 19,446 tokens, 346.1s
+- E stopped on duplicate proposals: **yes** (2/5 iterations recorded)
 
 ## Guard splits
 

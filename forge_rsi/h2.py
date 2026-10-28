@@ -248,6 +248,7 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
     e_run = json.loads((runs_dir / f"{e['winner_run']}.json").read_text())
     e_stats = prereg.paired_stats(a_run, e_run, seed=seed)
 
+    e_killed = bool(e.get("killed_duplicate"))
     b_passed = int((b_run.get("summary") or {}).get("passed") or 0)
     a_passed = int((a_run.get("summary") or {}).get("passed") or 0)
     e_passed = int((e_run.get("summary") or {}).get("passed") or 0)
@@ -398,6 +399,8 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
                f"{result['ledger']['tokens']:,} tokens, {result['ledger']['wall_s']:.1f}s",
                f"- E ledger: {e['ledger']['calls']} calls, "
                f"{e['ledger']['tokens']:,} tokens, {e['ledger']['wall_s']:.1f}s",
+               f"- E stopped on duplicate proposals: **{'yes' if e_killed else 'no'}** "
+               f"({len(e.get('iterations') or [])}/5 iterations recorded)",
                "", "## Guard splits", ""]
     if final:
         report += ["| split | A | B | delta | losses |", "|---|---|---|---|---|"]
@@ -419,7 +422,8 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
         "B": {"passed": b_passed, "score": b_run["summary"]["score"],
               "stats": b_stats, "harness": result["winner_hash"]},
         "E": {"passed": e_passed, "score": e_run["summary"]["score"],
-              "stats": e_stats},
+              "stats": e_stats, "killed_duplicate": e_killed,
+              "iterations_run": len(e.get("iterations") or [])},
         "primary": primary, "beats_e": beats_e, "diversity_ok": diversity_ok,
         "replication": replication, "holdout_ok": holdout_ok,
         "private_ok": private_ok, "final": final,
