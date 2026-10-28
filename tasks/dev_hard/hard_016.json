@@ -1,0 +1,12 @@
+{
+  "id": "hard_016",
+  "title": "pair_sum",
+  "prompt": "Write `pair_sum(nums: list, target: int) -> bool` returning True if two different positions in nums add up to target, else False. An element cannot pair with itself.",
+  "tests": "import unittest\nfrom solution import pair_sum\n\nclass T(unittest.TestCase):\n    def test_true(self):\n        self.assertTrue(pair_sum([2, 7, 11, 15], 9))\n    def test_false(self):\n        self.assertFalse(pair_sum([1, 2, 3], 100))\n    def test_self_not_allowed(self):\n        self.assertFalse(pair_sum([3], 6))\n    def test_duplicate_positions(self):\n        self.assertTrue(pair_sum([3, 3], 6))",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "lists"
+  ],
+  "difficulty": "hard"
+}

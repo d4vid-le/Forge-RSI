@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SPLITS = ("dev", "holdout", "skills", "composition", "private_holdout")
+SPLITS = ("dev", "dev_hard", "holdout", "skills", "composition", "private_holdout")
 
 
 def imported_names(tests: str) -> list[str]:

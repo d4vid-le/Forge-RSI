@@ -1,0 +1,12 @@
+{
+  "id": "hard_007",
+  "title": "chunk",
+  "prompt": "Write `chunk(items: list, size: int) -> list` splitting items into consecutive lists of length size; the last chunk may be shorter. Raise `ValueError` when size <= 0.",
+  "tests": "import unittest\nfrom solution import chunk\n\nclass T(unittest.TestCase):\n    def test_remainder(self):\n        self.assertEqual(chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]])\n    def test_exact(self):\n        self.assertEqual(chunk([1, 2, 3, 4], 2), [[1, 2], [3, 4]])\n    def test_empty(self):\n        self.assertEqual(chunk([], 3), [])\n    def test_invalid(self):\n        with self.assertRaises(ValueError):\n            chunk([1], 0)",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "lists"
+  ],
+  "difficulty": "hard"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "hard_010",
+  "title": "rotate_matrix",
+  "prompt": "Write `rotate_matrix(matrix: list) -> list` rotating a rectangular matrix 90 degrees clockwise. Return a new list of lists; do not mutate the input.",
+  "tests": "import unittest\nfrom solution import rotate_matrix\n\nclass T(unittest.TestCase):\n    def test_square(self):\n        self.assertEqual(rotate_matrix([[1, 2], [3, 4]]), [[3, 1], [4, 2]])\n    def test_rectangular(self):\n        self.assertEqual(rotate_matrix([[1, 2, 3], [4, 5, 6]]), [[4, 1], [5, 2], [6, 3]])\n    def test_empty(self):\n        self.assertEqual(rotate_matrix([]), [])\n    def test_single(self):\n        self.assertEqual(rotate_matrix([[7]]), [[7]])",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "lists",
+    "matrices"
+  ],
+  "difficulty": "hard"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "hard_013",
+  "title": "roman_to_int",
+  "prompt": "Write `roman_to_int(text: str) -> int` converting a valid Roman numeral using subtractive notation. An empty string returns 0.",
+  "tests": "import unittest\nfrom solution import roman_to_int\n\nclass T(unittest.TestCase):\n    def test_subtractive(self):\n        self.assertEqual(roman_to_int(\"MCMXCIV\"), 1994)\n    def test_simple(self):\n        self.assertEqual(roman_to_int(\"XIV\"), 14)\n    def test_empty(self):\n        self.assertEqual(roman_to_int(\"\"), 0)\n    def test_large(self):\n        self.assertEqual(roman_to_int(\"MMMCMXCIX\"), 3999)",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings",
+    "parsing"
+  ],
+  "difficulty": "hard"
+}

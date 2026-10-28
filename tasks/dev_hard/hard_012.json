@@ -1,0 +1,12 @@
+{
+  "id": "hard_012",
+  "title": "caesar",
+  "prompt": "Write `caesar(text: str, shift: int) -> str` shifting ASCII letters by shift, wrapping around the alphabet, preserving case, and leaving non-letters unchanged. Negative shifts are allowed.",
+  "tests": "import unittest\nfrom solution import caesar\n\nclass T(unittest.TestCase):\n    def test_wrap(self):\n        self.assertEqual(caesar(\"xyz\", 3), \"abc\")\n    def test_case_and_punct(self):\n        self.assertEqual(caesar(\"Ab-c!\", 1), \"Bc-d!\")\n    def test_negative(self):\n        self.assertEqual(caesar(\"abc\", -1), \"zab\")\n    def test_empty(self):\n        self.assertEqual(caesar(\"\", 5), \"\")",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings"
+  ],
+  "difficulty": "hard"
+}

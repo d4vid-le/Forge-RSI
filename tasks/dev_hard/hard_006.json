@@ -1,0 +1,12 @@
+{
+  "id": "hard_006",
+  "title": "parse_duration",
+  "prompt": "Write `parse_duration(text: str) -> int` that parses durations like `1h30m15s`, `45s`, or `2h` into seconds. An empty string or a malformed duration raises `ValueError`.",
+  "tests": "import unittest\nfrom solution import parse_duration\n\nclass T(unittest.TestCase):\n    def test_full(self):\n        self.assertEqual(parse_duration(\"1h30m15s\"), 5415)\n    def test_seconds(self):\n        self.assertEqual(parse_duration(\"45s\"), 45)\n    def test_hours(self):\n        self.assertEqual(parse_duration(\"2h\"), 7200)\n    def test_invalid(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"\")\n        with self.assertRaises(ValueError):\n            parse_duration(\"soon\")",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "parsing"
+  ],
+  "difficulty": "hard"
+}

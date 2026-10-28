@@ -501,7 +501,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     e = sub.add_parser("eval", help="evaluate a harness on a split")
     e.add_argument("--harness", required=True)
-    e.add_argument("--split", choices=["dev", "holdout", "skills", "composition", "private_holdout"], default="dev")
+    e.add_argument("--split", choices=["dev", "dev_hard", "holdout", "skills", "composition", "private_holdout"], default="dev")
     e.add_argument("--run-id", required=True)
     e.add_argument("--samples", type=int, default=1)
     e.add_argument("--limit", type=int, default=None)

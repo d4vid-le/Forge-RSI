@@ -1,0 +1,13 @@
+{
+  "id": "hard_020",
+  "title": "normalize_path",
+  "prompt": "Write `normalize_path(path: str) -> str` simplifying an absolute POSIX path: collapse `.` and empty segments, resolve `..` against existing parents, and never return a trailing slash except for the root `/`.",
+  "tests": "import unittest\nfrom solution import normalize_path\n\nclass T(unittest.TestCase):\n    def test_simplify(self):\n        self.assertEqual(normalize_path(\"/a/./b/../c\"), \"/a/c\")\n    def test_root_parent(self):\n        self.assertEqual(normalize_path(\"/../a\"), \"/a\")\n    def test_root(self):\n        self.assertEqual(normalize_path(\"/\"), \"/\")\n    def test_slashes(self):\n        self.assertEqual(normalize_path(\"/a//b/\"), \"/a/b\")",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings",
+    "parsing"
+  ],
+  "difficulty": "hard"
+}

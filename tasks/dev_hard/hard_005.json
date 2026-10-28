@@ -1,0 +1,13 @@
+{
+  "id": "hard_005",
+  "title": "top_k_words",
+  "prompt": "Write `top_k_words(text: str, k: int) -> list` returning the k most frequent lowercased tokens as (word, count) tuples, ties sorted alphabetically. If k is larger than the vocabulary, return all words.",
+  "tests": "import unittest\nfrom solution import top_k_words\n\nclass T(unittest.TestCase):\n    def test_rank(self):\n        self.assertEqual(top_k_words(\"b a b c a b\", 2), [(\"b\", 3), (\"a\", 2)])\n    def test_tie_alpha(self):\n        self.assertEqual(top_k_words(\"z y x\", 2), [(\"x\", 1), (\"y\", 1)])\n    def test_k_large(self):\n        self.assertEqual(top_k_words(\"a b\", 10), [(\"a\", 1), (\"b\", 1)])\n    def test_empty(self):\n        self.assertEqual(top_k_words(\"\", 3), [])",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings",
+    "word_freq"
+  ],
+  "difficulty": "hard"
+}

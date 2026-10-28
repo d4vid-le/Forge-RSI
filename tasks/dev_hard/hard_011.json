@@ -1,0 +1,12 @@
+{
+  "id": "hard_011",
+  "title": "valid_parentheses",
+  "prompt": "Write `valid_parentheses(text: str) -> bool` that returns True when every (), [], and {} is correctly opened and closed in order. An empty string is valid.",
+  "tests": "import unittest\nfrom solution import valid_parentheses\n\nclass T(unittest.TestCase):\n    def test_mixed(self):\n        self.assertTrue(valid_parentheses(\"{[()]}\"))\n    def test_wrong_order(self):\n        self.assertFalse(valid_parentheses(\"([)]\"))\n    def test_empty(self):\n        self.assertTrue(valid_parentheses(\"\"))\n    def test_extra_close(self):\n        self.assertFalse(valid_parentheses(\"())\"))",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings"
+  ],
+  "difficulty": "hard"
+}

@@ -8,8 +8,9 @@ from pathlib import Path
 from . import agent
 from . import harness as harness_mod
 
-SPLITS = {"dev": "dev", "holdout": "holdout", "skills": "skills",
-          "composition": "composition", "private_holdout": "private_holdout"}
+SPLITS = {"dev": "dev", "dev_hard": "dev_hard", "holdout": "holdout",
+          "skills": "skills", "composition": "composition",
+          "private_holdout": "private_holdout"}
 
 
 def tasks_dir(cfg: dict, split: str) -> Path:

@@ -1,0 +1,12 @@
+{
+  "id": "hard_019",
+  "title": "group_anagrams",
+  "prompt": "Write `group_anagrams(words: list) -> list` grouping words that are anagrams. Return groups sorted internally and groups ordered by their first word. Comparisons are case-sensitive.",
+  "tests": "import unittest\nfrom solution import group_anagrams\n\nclass T(unittest.TestCase):\n    def test_groups(self):\n        got = group_anagrams([\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"])\n        self.assertEqual(got, [[\"ate\", \"eat\", \"tea\"], [\"bat\"], [\"nat\", \"tan\"]])\n    def test_empty(self):\n        self.assertEqual(group_anagrams([]), [])\n    def test_no_anagrams(self):\n        self.assertEqual(group_anagrams([\"a\", \"b\"]), [[\"a\"], [\"b\"]])\n    def test_case_sensitive(self):\n        self.assertEqual(group_anagrams([\"A\", \"a\"]), [[\"A\"], [\"a\"]])",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings"
+  ],
+  "difficulty": "hard"
+}

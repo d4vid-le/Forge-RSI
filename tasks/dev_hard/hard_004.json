@@ -1,0 +1,13 @@
+{
+  "id": "hard_004",
+  "title": "word_freq",
+  "prompt": "Write `word_freq(text: str) -> dict` mapping each lowercased whitespace-separated token to its count. Punctuation stays part of the token.",
+  "tests": "import unittest\nfrom solution import word_freq\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(word_freq(\"A a B\"), {\"a\": 2, \"b\": 1})\n    def test_punct(self):\n        self.assertEqual(word_freq(\"a, a, b\"), {\"a,\": 2, \"b\": 1})\n    def test_empty(self):\n        self.assertEqual(word_freq(\"\"), {})\n    def test_whitespace(self):\n        self.assertEqual(word_freq(\"x  y\tx\"), {\"x\": 2, \"y\": 1})",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings",
+    "word_freq"
+  ],
+  "difficulty": "hard"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "hard_014",
+  "title": "int_to_roman",
+  "prompt": "Write `int_to_roman(n: int) -> str` converting an integer from 1 to 3999 to a Roman numeral using subtractive notation. Raise `ValueError` outside that range.",
+  "tests": "import unittest\nfrom solution import int_to_roman\n\nclass T(unittest.TestCase):\n    def test_1994(self):\n        self.assertEqual(int_to_roman(1994), \"MCMXCIV\")\n    def test_58(self):\n        self.assertEqual(int_to_roman(58), \"LVIII\")\n    def test_one(self):\n        self.assertEqual(int_to_roman(1), \"I\")\n    def test_invalid(self):\n        with self.assertRaises(ValueError):\n            int_to_roman(0)",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings"
+  ],
+  "difficulty": "hard"
+}

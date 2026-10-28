@@ -1,0 +1,12 @@
+{
+  "id": "hard_002",
+  "title": "rle_decode",
+  "prompt": "Write `rle_decode(pairs: list) -> str` that expands [character, count] pairs back into a string.",
+  "tests": "import unittest\nfrom solution import rle_decode\n\nclass T(unittest.TestCase):\n    def test_basic(self):\n        self.assertEqual(rle_decode([[\"a\", 3], [\"b\", 2]]), \"aaabb\")\n    def test_empty(self):\n        self.assertEqual(rle_decode([]), \"\")\n    def test_zero(self):\n        self.assertEqual(rle_decode([[\"x\", 0], [\"y\", 2]]), \"yy\")\n    def test_single(self):\n        self.assertEqual(rle_decode([[\"z\", 1]]), \"z\")",
+  "entry": "solution.py",
+  "timeout_s": 20,
+  "tags": [
+    "strings"
+  ],
+  "difficulty": "hard"
+}
