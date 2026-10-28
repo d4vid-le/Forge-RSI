@@ -13,7 +13,7 @@
 | E greedy same budget | 15/20 | 0.75 | -0.05 | 0 | 1 | 1.0000 | [-0.15, +0.00] |
 
 - primary floor +3: **FAIL** (B−A = +1)
-- B beats E by ≥2: **PASS** (B−E = +2)
+- B vs E incumbent by ≥2: **PASS** (B−E = +2; E stopped after 2/5 iterations, control incomplete)
 - diversity floor: **FAIL** (distinct 4, jaccard 0.6923, cue entropy 0.0)
 - Stage 1: **STOP**
 

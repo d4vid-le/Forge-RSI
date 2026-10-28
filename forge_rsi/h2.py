@@ -249,6 +249,8 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
     e_stats = prereg.paired_stats(a_run, e_run, seed=seed)
 
     e_killed = bool(e.get("killed_duplicate"))
+    e_iterations = len(e.get("iterations") or [])
+    e_complete = (not e_killed) and e_iterations >= 5
     b_passed = int((b_run.get("summary") or {}).get("passed") or 0)
     a_passed = int((a_run.get("summary") or {}).get("passed") or 0)
     e_passed = int((e_run.get("summary") or {}).get("passed") or 0)
@@ -370,8 +372,10 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
         "",
         f"- primary floor +3: **{'PASS' if primary else 'FAIL'}** "
         f"(B−A = {b_passed - a_passed:+d})",
-        f"- B beats E by ≥2: **{'PASS' if beats_e else 'FAIL'}** "
-        f"(B−E = {b_passed - e_passed:+d})",
+        f"- B vs E incumbent by ≥2: **{'PASS' if beats_e else 'FAIL'}** "
+        f"(B−E = {b_passed - e_passed:+d}"
+        + (f"; E stopped after {e_iterations}/5 iterations, control incomplete"
+           if not e_complete else "") + ")",
         f"- diversity floor: **{'PASS' if diversity_ok else 'FAIL'}** "
         f"(distinct {div.get('distinct_candidates')}, jaccard {div.get('mean_line_jaccard')}, "
         f"cue entropy {div.get('cue_entropy')})",
@@ -424,7 +428,8 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
         "E": {"passed": e_passed, "score": e_run["summary"]["score"],
               "stats": e_stats, "killed_duplicate": e_killed,
               "iterations_run": len(e.get("iterations") or [])},
-        "primary": primary, "beats_e": beats_e, "diversity_ok": diversity_ok,
+        "primary": primary, "beats_e": beats_e, "e_complete": e_complete,
+        "diversity_ok": diversity_ok,
         "replication": replication, "holdout_ok": holdout_ok,
         "private_ok": private_ok, "final": final,
         "artifacts": str(out),
