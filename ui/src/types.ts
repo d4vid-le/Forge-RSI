@@ -129,6 +129,9 @@ export type H2Summary = {
   promoted: boolean;
   primary: boolean;
   beats_e: boolean;
+  e_complete: boolean;
+  composer_mode: "selected" | "synthesized" | "kept_base" | "unknown";
+  composer_selected: string[];
   diversity_ok: boolean;
   replication: boolean;
   holdout_ok: boolean;

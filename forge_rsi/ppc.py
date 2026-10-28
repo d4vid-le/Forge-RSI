@@ -418,6 +418,15 @@ def run(cfg: dict, round_name: str, *, k: int = 2,
         ledger.add_run(f"arm:{arm}", run)
 
     winner, winner_run = pick_winner(arm_runs, arms)
+
+    def _content(h):
+        return {k: v for k, v in h.items() if k != "version"}
+
+    winner_h = arm_harnesses[winner]
+    selected = [label for label, h in cand_h.items()
+                if _content(h) == _content(winner_h)]
+    kept_base = _content(winner_h) == _content(base_h)
+    composer_mode = "selected" if selected else ("kept_base" if kept_base else "synthesized")
     best_candidate = max(cand_runs.values(), key=lambda r: r.get("summary", {}).get("score") or 0)
     dev_stats = prereg.paired_stats(base_run, winner_run, seed=seed)
     candidate_stats = prereg.paired_stats(base_run, best_candidate, seed=seed)
@@ -447,6 +456,8 @@ def run(cfg: dict, round_name: str, *, k: int = 2,
                             "stats": prereg.paired_stats(base_run, r, seed=seed)}
                         for a, r in arm_runs.items()},
         "winner": winner,
+        "composer_mode": composer_mode,
+        "composer_selected": selected,
         "winner_harness": str(harness_dir / f"{round_name}_{winner}.json"),
         "winner_hash": harness_mod.harness_hash(arm_harnesses[winner]),
         "dev": dev_stats,

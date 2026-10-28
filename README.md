@@ -123,9 +123,11 @@ Data → Train → Skills → RSI → Playground → Telemetry
 - **Playground**: chat and probe a real local server; no server, no reply.
 - **H2 research**: the frozen [pre-registration](docs/H2-PREREG-v2.md) ran a
   staged parallel propose–probe–compose experiment on `dev_hard`. Stage 1
-  stopped: **B 17/20 vs A 16/20 (+1, p=1.0)**, below the +3 floor; the greedy
-  control collapsed to duplicate proposals and was killed. Stage 2 and the
-  experience-library arms were not run, per the stop rule. See
+  stopped: **B 17/20 vs A 16/20 (+1, p=1.0, CI [-0.10,+0.20])**, below the +3
+  floor. The composer selected one candidate instead of synthesizing; the cue
+  table had zero routing entropy. The greedy compute control was stopped by the
+  duplicate rule and is **invalid**, not a compute-matched comparison. Stage 2
+  and the experience-library arms were not run, per the stop rule. See
   [`reports/h2_stage1.md`](reports/h2_stage1.md).
 - **Telemetry**: every run, evaluation, and report is read from disk.
 
@@ -148,7 +150,7 @@ offline validation. Promotion still requires a human at the gate.
 | Gap mining | 14 failing probes → 28 re-verified rows, holdouts excluded |
 | H2 hard split | r1b 16/20 on frozen `dev_hard` (original dev is saturated 20/20) |
 | H2 replication | r1b 13/24 on the 24 skill probes |
-| H2.1 Stage 1 | B 17/20 vs A 16/20 (+1); +3 floor failed; E killed on duplicate proposals |
+| H2.1 Stage 1 | B 17/20 vs A 16/20 (+1, CI includes 0); +3 floor failed; composer select-only; E control invalid |
 
 Full evidence is in [`reports/`](reports/): `final.md`, `legates.md`,
 `composition.md`, `private_holdout.md`, `gaps.md`, `dream.md`, `r1.md`,

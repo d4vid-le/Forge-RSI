@@ -260,7 +260,10 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
     diversity_ok = (div.get("distinct_candidates", 0) >= 3
                     and div.get("mean_line_jaccard", 1.0) <= 0.85
                     and div.get("cue_entropy", 0.0) >= 0.5)
-    stage1_pass = primary and beats_e and diversity_ok
+    e_valid = bool(e_complete)
+    composer_mode = result.get("composer_mode", "unknown")
+    composer_selected = result.get("composer_selected") or []
+    stage1_pass = primary and beats_e and diversity_ok and e_valid
 
     # Replication only when Stage 1 passes.
     final = {}
@@ -299,14 +302,18 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
     private_ok = (final.get("private_holdout", {}).get("stats", {}).get("losses", 99) == 0)
     promoted = bool(stage1_pass and replication and holdout_ok and private_ok)
 
+    reasons = []
+    if not primary:
+        reasons.append(f"primary +3 failed (B-A={b_passed - a_passed:+d})")
     if not diversity_ok:
-        decision = "KILL: candidate diversity or cue entropy below the pre-registered floor"
-    elif not stage1_pass:
-        decision = "STOP: Stage 1 failed"
-    elif not promoted:
-        decision = "QUARANTINE: replication or guard failed"
-    else:
-        decision = "PROMOTE"
+        reasons.append("diversity/cue entropy below floor")
+    if composer_mode == "selected":
+        reasons.append("composer selected a candidate instead of synthesizing")
+    if not e_valid:
+        reasons.append("E control invalid/truncated")
+    if not reasons and not promoted:
+        reasons.append("replication or guard failed")
+    decision = ("PROMOTE" if promoted else "KILL: " + "; ".join(reasons))
     manifest = {
         "experiment": "h2.1-stage1", "round": round_name,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -429,6 +436,7 @@ def run_stage1(cfg: dict, round_name: str = "h2a", *, k: int = 2,
               "stats": e_stats, "killed_duplicate": e_killed,
               "iterations_run": len(e.get("iterations") or [])},
         "primary": primary, "beats_e": beats_e, "e_complete": e_complete,
+        "composer_mode": composer_mode, "composer_selected": composer_selected,
         "diversity_ok": diversity_ok,
         "replication": replication, "holdout_ok": holdout_ok,
         "private_ok": private_ok, "final": final,

@@ -281,6 +281,34 @@ def propose_ppc_many(cfg: dict, base: dict, failures: list[dict], specs: list[di
     return out
 
 
+def build_compose_mission(base: dict, candidates: dict[str, dict], table: str,
+                          cue_table: list[dict] | None = None,
+                          lessons: list | None = None, arm: str = "real") -> str:
+    cue_block = ""
+    if arm == "real" and cue_table:
+        cue_block = ("\n\nMEASURED CUE → HARNESS TABLE (use it to choose a "
+                     "harness when the failure signature matches):\n"
+                     + json.dumps(cue_table, indent=2))
+    lesson_block = ""
+    if lessons:
+        from .library import Library
+        lesson_block = "\n\n" + Library.render(lessons)
+    return (
+        "You are composing THE final harness from a base and several candidate "
+        "harnesses. You may MERGE edits, ADOPT one candidate wholesale, or KEEP "
+        "BASE. Do not concatenate conflicting instructions.\n\n"
+        "The table below is measured on the same dev tasks. Use task-level "
+        "contrasts, not just aggregate scores. Every decision must cite a task "
+        "or a repeated pattern. Do not mention task ids, tests, holdout, or eval "
+        "sets in the harness.\n\n"
+        f"BASE HARNESS:\n{json.dumps(base, indent=2)}\n\n"
+        f"CANDIDATE HARNESSES:\n{json.dumps(candidates, indent=2)}\n\n"
+        f"CONTRAST TABLE:\n{table}{cue_block}{lesson_block}\n\n"
+        "Return ONLY the final harness JSON with keys: version, role, contract, "
+        "hops, tools, selection, budget."
+    )
+
+
 def compose_ppc_many(cfg: dict, base: dict, candidates: dict[str, dict],
                      variants: dict[str, dict], cue_table: list[dict],
                      *, lessons: list | None = None,
@@ -294,29 +322,8 @@ def compose_ppc_many(cfg: dict, base: dict, candidates: dict[str, dict],
     for arm, variant in variants.items():
         t0 = time.time()
         table = ppc.render_table(variant)
-        cue_block = ""
-        if arm == "real" and cue_table:
-            cue_block = ("\n\nMEASURED CUE → HARNESS TABLE (use it to choose a "
-                         "harness when the failure signature matches):\n"
-                         + json.dumps(cue_table, indent=2))
-        lesson_block = ""
-        if lessons:
-            from .library import Library
-            lesson_block = "\n\n" + Library.render(lessons)
-        mission = (
-            "You are composing THE final harness from a base and several candidate "
-            "harnesses. You may MERGE edits, ADOPT one candidate wholesale, or KEEP "
-            "BASE. Do not concatenate conflicting instructions.\n\n"
-            "The table below is measured on the same dev tasks. Use task-level "
-            "contrasts, not just aggregate scores. Every decision must cite a task "
-            "or a repeated pattern. Do not mention task ids, tests, holdout, or eval "
-            "sets in the harness.\n\n"
-            f"BASE HARNESS:\n{json.dumps(base, indent=2)}\n\n"
-            f"CANDIDATE HARNESSES:\n{json.dumps(candidates, indent=2)}\n\n"
-            f"CONTRAST TABLE:\n{table}{cue_block}{lesson_block}\n\n"
-            "Return ONLY the final harness JSON with keys: version, role, contract, "
-            "hops, tools, selection, budget."
-        )
+        mission = build_compose_mission(base, candidates, table, cue_table,
+                                        lessons, arm=arm)
         messages = [{"role": "system", "content": SYSTEM},
                     {"role": "user", "content": mission}]
         prompt = tok.apply_chat_template(messages, add_generation_prompt=True,

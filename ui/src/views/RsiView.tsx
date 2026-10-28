@@ -120,12 +120,24 @@ export function RsiView() {
             </div>
             <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 text-[10px]">
               <Pill tone={h2.primary ? "ok" : "err"}>primary +3</Pill>
-              <Pill tone={h2.beats_e ? "ok" : "err"}>B &gt; E</Pill>
+              <Pill tone={h2.e_complete ? (h2.beats_e ? "ok" : "err") : "warn"}>
+                {h2.e_complete ? "B > E" : "E control invalid"}
+              </Pill>
               <Pill tone={h2.diversity_ok ? "ok" : "err"}>diversity</Pill>
-              {h2.E?.killed_duplicate && <Pill tone="warn">E duplicate kill</Pill>}
-              <Pill tone={h2.replication ? "ok" : "err"}>probes +3</Pill>
-              <Pill tone={h2.holdout_ok ? "ok" : "err"}>holdout guard</Pill>
-              <Pill tone={h2.private_ok ? "ok" : "err"}>private guard</Pill>
+              {h2.composer_mode === "selected" && <Pill tone="warn">composer: select-only</Pill>}
+              {Object.keys(h2.final || {}).length === 0 ? (
+                <>
+                  <Pill tone="neutral">probes not run</Pill>
+                  <Pill tone="neutral">holdout not run</Pill>
+                  <Pill tone="neutral">private sealed</Pill>
+                </>
+              ) : (
+                <>
+                  <Pill tone={h2.replication ? "ok" : "err"}>probes +3</Pill>
+                  <Pill tone={h2.holdout_ok ? "ok" : "err"}>holdout guard</Pill>
+                  <Pill tone={h2.private_ok ? "ok" : "err"}>private guard</Pill>
+                </>
+              )}
               <span className="ml-auto text-dim">Stage 2/3 only if B wins; private sealed until final.</span>
             </div>
           </>
